@@ -32,8 +32,7 @@ jobs:
     - name: Configurar Chave SSH
       uses: webfactory/ssh-agent@v0.9.0
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} # Troque pelo nome do seu secret
-
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} 
     - name: Adicionar Servidor aos Known Hosts
       run: ssh-keyscan -p 22 -H 144.22.228.196 >> ~/.ssh/known_hosts
 
@@ -44,7 +43,7 @@ jobs:
           echo "No jar found in target/"; exit 1
         fi
         echo "Uploading $JAR"
-        scp -P 22 "$JAR" opcARIO@144.22.228.196:/tmp/
+        scp -P 22 "$JAR" opc@144.22.228.196:/tmp/
 
     - name: Debug /tmp contents
       uses: appleboy/ssh-action@master
