@@ -1,0 +1,99 @@
+name: Deploy Spring Boot Backend
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    - name: Build with Maven
+      run: mvn clean package -DskipTests
+
+    # Passo 1: Envia o .jar para a pasta /tmp, que sempre tem permissão de escrita
+    - name: SCP JAR via scp
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -p ${{ secrets.PORT }} -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+        JAR=$(ls target/*.jar 2>/dev/null | head -n1)
+        if [ -z "$JAR" ]; then
+          echo "No jar found in target/"; exit 1
+        fi
+        echo "Uploading $JAR"
+        scp -P ${{ secrets.PORT }} "$JAR" ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/tmp/
+
+    - name: Debug /tmp contents
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          echo "ls -la /tmp:"
+          ls -la /tmp | sed -n '1,200p'
+          echo ""
+          echo "tipo de /tmp/app.jar (file|dir|none):"
+          if [ -e /tmp.app.jar ]; then
+            if [ -d /tmp/app.jar ]; then echo "DIRECTORY"; fi
+            if [ -f /tmp.app.jar ]; then echo "FILE"; fi
+            file /tmp.app.jar || true
+            stat /tmp.app.jar || true
+          else
+            echo "NAO EXISTE /tmp.app.jar"
+          fi
+          echo "procura por jars em /tmp:"
+          ls -la /tmp/*.jar || true
+
+    # Passo 2: Move o ficheiro para o local correto e reinicia
+    - name: Move file and restart service
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          set -eu
+          # encontra o jar mais recente em /tmp
+          LATEST_JAR=$(ls -t /tmp/*.jar 2>/dev/null | head -n 1 || true)
+          if [ -z "$LATEST_JAR" ]; then
+            echo "ERRO: nenhum .jar encontrado em /tmp"
+            echo "Conteudo de /tmp:"
+            ls -la /tmp || true
+            exit 1
+          fi
+          # garante que é um ficheiro, não um diretório
+          if [ -d "$LATEST_JAR" ]; then
+            echo "ERRO: o caminho encontrado é um diretório: $LATEST_JAR"
+            ls -la "$LATEST_JAR" || true
+            exit 1
+          fi
+          echo "Usando jar: $LATEST_JAR"
+          sudo rm -f /home/opc/app.jar || true
+          sudo mv "$LATEST_JAR" /home/opc/app.jar
+          sudo chown opc:opc /home/opc/app.jar
+          sudo chmod 0755 /home/opc/app.jar
+          sudo systemctl restart meu-app.service
+          sudo systemctl status meu-app.service || true
