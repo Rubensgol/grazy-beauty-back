@@ -1,0 +1,5 @@
+{
+  "ativo" : false,
+  "periodoMinutos" : 40,
+  "plataformas" : [ "WHATSAPP", "EMAIL" ]
+}

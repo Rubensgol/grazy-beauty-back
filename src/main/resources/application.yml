@@ -1,0 +1,32 @@
+spring:
+  config:
+    import: optional:classpath:empresa.yml
+  application:
+    name: Salao-de-beleza
+  profiles:
+    # default active profile for local development; CI/Prod should override this (e.g. SPRING_PROFILES_ACTIVE=prod)
+    active: dev
+  datasource:
+    url: "jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/grazy_db"
+    username: "${DB_USERNAME:root}"
+    password: "${DB_PASSWORD:root}"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics"
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
