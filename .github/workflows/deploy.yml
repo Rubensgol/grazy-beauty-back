@@ -29,19 +29,22 @@ jobs:
     - name: Build with Maven
       run: mvn clean package -DskipTests
 
-    # Passo 1: Envia o .jar para a pasta /tmp, que sempre tem permissão de escrita
-    - name: SCP JAR via scp
+    - name: Configurar Chave SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} # Troque pelo nome do seu secret
+
+    - name: Adicionar Servidor aos Known Hosts
+      run: ssh-keyscan -p 22 -H 144.22.228.196 >> ~/.ssh/known_hosts
+
+    - name: Deploy
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -p ${{ secrets.PORT }} -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
         JAR=$(ls target/*.jar 2>/dev/null | head -n1)
         if [ -z "$JAR" ]; then
           echo "No jar found in target/"; exit 1
         fi
         echo "Uploading $JAR"
-        scp -P ${{ secrets.PORT }} "$JAR" ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/tmp/
+        scp -P 22 "$JAR" opcARIO@144.22.228.196:/tmp/
 
     - name: Debug /tmp contents
       uses: appleboy/ssh-action@master
