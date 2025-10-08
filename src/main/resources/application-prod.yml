@@ -2,14 +2,12 @@ spring:
   application:
     name: Salao-de-beleza
 
-  # Production datasource - values are read from environment variables when possible
   datasource:
     url: "jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:grazy_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
     username: "${DB_USERNAME:grazy}"
     password: "${DB_PASSWORD:grazy_pass}"
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # Hibernate / JPA settings (kept from existing configs)
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,7 +15,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
 
-  # File upload limits and storage
   servlet:
     multipart:
       max-file-size: 10MB
@@ -41,3 +38,14 @@ management:
       show-details: always
       probes:
         enabled: true
+
+# Admin user for single-user login (override with env vars in production)
+app:
+  admin:
+    username: "${ADMIN_USERNAME}"
+    password: "${ADMIN_PASSWORD}"
+
+# JWT settings (provide a secure secret in production via env)
+  jwt:
+    secret: "${JWT_SECRET}"
+    expiration-ms: 3600000
