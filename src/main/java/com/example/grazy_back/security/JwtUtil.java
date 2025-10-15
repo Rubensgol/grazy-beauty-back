@@ -3,9 +3,11 @@ package com.example.grazy_back.security;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.WeakKeyException;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -22,7 +24,28 @@ public class JwtUtil
 
     private Key key() 
     {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        if (jwtSecret == null || jwtSecret.isBlank()) 
+            throw new IllegalStateException("JWT secret is not configured. Set app.jwt.secret or JWT_SECRET.");
+
+        byte[] keyBytes;
+
+        try 
+        {
+            keyBytes = Base64.getDecoder().decode(jwtSecret);
+        } 
+        catch (IllegalArgumentException e) 
+        {
+            keyBytes = jwtSecret.getBytes();
+        }
+
+        try 
+        {
+            return Keys.hmacShaKeyFor(keyBytes);
+        }
+         catch (WeakKeyException e) 
+        {
+            throw new IllegalStateException("JWT secret too weak. Provide a 256-bit (32+ bytes) secret. You can use a base64-encoded value.", e);
+        }
     }
 
     public String generateToken(String username) 
