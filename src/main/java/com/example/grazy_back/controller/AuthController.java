@@ -11,8 +11,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Autenticação", description = "Endpoints de autenticação e emissão de token JWT")
 public class AuthController 
 {
     @Value("${app.admin.username:admin}")
@@ -29,6 +37,13 @@ public class AuthController
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Realiza login", description = "Valida credenciais do administrador e retorna um token JWT")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Login realizado com sucesso",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Requisição inválida (faltando usuário ou senha)", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Credenciais inválidas", content = @Content)
+    })
     public ResponseEntity<?> login(@RequestBody LoginRequest req) 
     {
         if (req.getUsername() == null || req.getSenha() == null)
