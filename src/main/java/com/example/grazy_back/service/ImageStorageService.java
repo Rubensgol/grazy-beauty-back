@@ -36,11 +36,25 @@ public class ImageStorageService
             .build();
 
     public ImageStorageService(@Value("${file.storage.location:uploads}") String storageLocation,
-            ImageMetadataRepository repo) throws IOException
+            ImageMetadataRepository repo)
     {
-        this.storageRoot = Paths.get(storageLocation).toAbsolutePath().normalize();
-        Files.createDirectories(this.storageRoot);
+
+        Path candidate = Paths.get(storageLocation);
+
+        if (!candidate.isAbsolute())
+            candidate = Paths.get(System.getProperty("user.home"), storageLocation);
+
+        this.storageRoot = candidate.toAbsolutePath().normalize();
         this.repo = repo;
+
+        try 
+        {
+            Files.createDirectories(this.storageRoot);
+        }
+        catch (IOException e) 
+        {
+            throw new IllegalStateException("Unable to create storage directory: " + this.storageRoot, e);
+        }
     }
 
     public ImageMetadata storeMultipart(MultipartFile file, boolean forServico) throws IOException
