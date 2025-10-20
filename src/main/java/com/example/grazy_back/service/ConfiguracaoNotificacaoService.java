@@ -30,25 +30,40 @@ public class ConfiguracaoNotificacaoService
     }
 
     @PostConstruct
-    void init() throws IOException 
+    void init()
     {
-        if (Files.exists(filePath)) 
-        {
-            lock.writeLock().lock();
+        lock.writeLock().lock();
 
-            try 
-            {
-                atual = mapper.readValue(Files.readAllBytes(filePath), ConfiguracaoNotificacao.class);
-            } 
-            finally 
-            {
-                lock.writeLock().unlock();
-            }
-        } 
-        else 
+        try 
         {
-            atual = defaultConfig();
-            salvar(atual);
+            if (Files.exists(filePath)) 
+            {
+                try 
+                {
+                    atual = mapper.readValue(Files.readAllBytes(filePath), ConfiguracaoNotificacao.class);
+                } 
+                catch (IOException e) 
+                {
+                    System.err.println("Failed to read notification config from " + filePath + ": " + e.getMessage());
+                    atual = defaultConfig();
+                }
+            } 
+            else 
+            {
+                atual = defaultConfig();
+                try 
+                {
+                    salvar(atual);
+                } 
+                catch (IOException e) 
+                {
+                    System.err.println("Failed to save default notification config to " + filePath + ": " + e.getMessage());
+                }
+            }
+        }
+        finally 
+        {
+            lock.writeLock().unlock();
         }
     }
 
