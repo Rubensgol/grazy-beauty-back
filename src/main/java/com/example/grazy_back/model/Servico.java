@@ -17,6 +17,6 @@ public class Servico
     private String descricao;
     private Double preco;
     private String imageStoredFilename;
-    // duração estimada em minutos
     private Integer duracaoMinutos;
+    private Integer ordem;
 }

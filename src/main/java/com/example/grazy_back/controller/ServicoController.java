@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import com.example.grazy_back.dto.ApiResposta;
+import com.example.grazy_back.dto.OrdenacaoServicosRequest;
 import com.example.grazy_back.dto.ServicoRequest;
 import com.example.grazy_back.model.Servico;
 import com.example.grazy_back.service.ServicoService;
@@ -57,6 +58,14 @@ public class ServicoController
         Servico atualizado = servicoService.atualizarServico(id, servico);
         if (atualizado == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(ApiResposta.of(atualizado));
+    }
+
+    @PutMapping("/ordenacao")
+    @Operation(summary = "Atualiza ordenação dos serviços")
+    public ResponseEntity<ApiResposta<Void>> atualizarOrdenacao(@RequestBody OrdenacaoServicosRequest request)
+    {
+        servicoService.atualizarOrdenacao(request.getIds());
+        return ResponseEntity.ok(ApiResposta.of(null));
     }
 
     @DeleteMapping("/{id}")

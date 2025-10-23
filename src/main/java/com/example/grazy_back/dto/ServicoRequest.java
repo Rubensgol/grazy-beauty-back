@@ -14,4 +14,5 @@ public class ServicoRequest
     @JsonAlias({"imageStoredFilename", "image_stored_filename"})
     private String storedFilename;
     private Integer duracaoMinutos;
+    private Integer ordem;
 }
