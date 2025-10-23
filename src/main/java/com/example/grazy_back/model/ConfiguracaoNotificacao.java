@@ -1,6 +1,6 @@
 package com.example.grazy_back.model;
 
-import java.util.Set;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -12,5 +12,5 @@ public class ConfiguracaoNotificacao
 {
     private boolean ativo;
     private Long periodoMinutos;
-    private Set<String> plataformas;
+    private Map<String, String> plataformas;
 }

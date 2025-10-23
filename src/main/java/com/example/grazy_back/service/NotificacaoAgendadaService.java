@@ -1,8 +1,8 @@
 package com.example.grazy_back.service;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -76,7 +76,7 @@ public class NotificacaoAgendadaService
             return;
         }
 
-        Set<String> plataformas = cfg.getPlataformas();
+        Map<String, String> plataformas = cfg.getPlataformas();
 
         if (plataformas == null || plataformas.isEmpty())
         {
@@ -86,7 +86,7 @@ public class NotificacaoAgendadaService
 
         for (Agendamento a : proximos) 
         {
-            for (String p : plataformas)
+            for (String p : plataformas.keySet())
             {
                 log.info("[NOTIFICACAO] Plataforma={} AgendamentoID={} Usuario={} Servico={} DataHora={} (dentro de ~{} min)",
                         p,
@@ -95,6 +95,7 @@ public class NotificacaoAgendadaService
                         a.getServico() != null ? a.getServico().getNome() : "-",
                         a.getDataHora(),
                         cfg.getPeriodoMinutos());
+
                 if ("WHATSAPP".equalsIgnoreCase(p)) 
                     whatsappSenderService.enviar(a.getUsuario(), a);
             }

@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -72,7 +72,7 @@ public class ConfiguracaoNotificacaoService
         ConfiguracaoNotificacao c = new ConfiguracaoNotificacao();
         c.setAtivo(false);
         c.setPeriodoMinutos(30L);
-        c.setPlataformas(Set.of("EMAIL"));
+        c.setPlataformas(Map.of("EMAIL", "grazy@email.com"));
         return c;
     }
 
