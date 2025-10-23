@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.grazy_back.DTO.AgendamentoRequest;
 import com.example.grazy_back.dto.ApiResposta;
+import com.example.grazy_back.dto.CancelamentoRequest;
 import com.example.grazy_back.model.Agendamento;
 import com.example.grazy_back.service.AgendamentoService;
 
@@ -92,6 +93,16 @@ public class AgendamentoController
         return service.finalizar(id)
                 .map(a -> ResponseEntity.ok(ApiResposta.of(a)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/cancelar")
+    @Operation(summary = "Cancela um agendamento")
+    public ResponseEntity<ApiResposta<Agendamento>> cancelar(@PathVariable Long id, @RequestBody(required = false) CancelamentoRequest req)
+    {
+        String motivo = (req != null) ? req.getMotivo() : null;
+        return service.cancelar(id, motivo)
+                .map(a -> ResponseEntity.ok(ApiResposta.of(a)))
+                .orElse(ResponseEntity.badRequest().body(ApiResposta.error("Não foi possível cancelar (ID inexistente ou já finalizado)")));
     }
 
     @PutMapping("/{id}")

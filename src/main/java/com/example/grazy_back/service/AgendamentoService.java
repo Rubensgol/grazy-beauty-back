@@ -113,6 +113,24 @@ public class AgendamentoService
         });
     }
 
+    public Optional<Agendamento> cancelar(Long id, String motivo)
+    {
+        return agendamentoRepository.findById(id).flatMap(a -> {
+            if (a.getStatus() == StatusAgendamentoEnum.FINALIZADO) return Optional.empty();
+
+            if (a.getStatus() == StatusAgendamentoEnum.CANCELADO) return Optional.of(a);
+
+            a.setStatus(StatusAgendamentoEnum.CANCELADO);
+            a.setCanceledAt(Instant.now());
+
+            if (motivo != null && !motivo.isBlank())
+                a.setCancelReason(motivo);
+
+            Agendamento salvo = agendamentoRepository.save(a);
+            return Optional.of(salvo);
+        });
+    }
+
     public Optional<Agendamento> atualizar(Long id, AgendamentoRequest req)
     {
         return agendamentoRepository.findById(id).flatMap(a -> {

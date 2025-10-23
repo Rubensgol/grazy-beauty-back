@@ -8,6 +8,7 @@ import com.example.grazy_back.enums.StatusAgendamentoEnum;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,10 +38,13 @@ public class Agendamento
     private String obs;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", columnDefinition = "varchar(20)")
     private StatusAgendamentoEnum status = StatusAgendamentoEnum.PENDENTE;
 
     private Instant createdAt = Instant.now();
     private Instant finalizedAt;
+    private Instant canceledAt;
+    private String cancelReason;
     private boolean notificado = false;
     private Instant notificadoEm;
 }
