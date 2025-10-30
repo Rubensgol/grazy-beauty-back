@@ -10,8 +10,10 @@ import java.io.IOException;
 import org.springframework.data.domain.Sort;
 
 import com.example.grazy_back.dto.ServicoRequest;
+import com.example.grazy_back.enums.ServicoDeleteResultado;
 import com.example.grazy_back.model.Servico;
 import com.example.grazy_back.repository.ServicoRepository;
+import com.example.grazy_back.repository.AgendamentoRepository;
 
 @Service
 public class ServicoService 
@@ -22,10 +24,12 @@ public class ServicoService
     @Autowired
     private ImageStorageService imageStorageService;
 
+    @Autowired
+    private AgendamentoRepository agendamentoRepository;
+
     public List<Servico> listarServicos() 
     {
-        // ordena por ordem (posição definida pelo frontend) e nome como desempate
-        return servicoRepository.findAll(Sort.by(Sort.Direction.ASC, "ordem", "nome"));
+        return servicoRepository.findByAtivoTrue(Sort.by(Sort.Direction.ASC, "ordem", "nome"));
     }
 
     public Servico buscarServicoPorId(Long id) 
@@ -40,6 +44,7 @@ public class ServicoService
         novoServico.setDescricao(servico.getDescricao());
         novoServico.setPreco(servico.getPreco());
         novoServico.setDuracaoMinutos(servico.getDuracaoMinutos());
+        novoServico.setAtivo(true);
         // se não vier ordem, coloca no final
         if (servico.getOrdem() != null)
             novoServico.setOrdem(servico.getOrdem());
@@ -67,13 +72,31 @@ public class ServicoService
 
     public boolean deletarServico(Long id)
     {
+        ServicoDeleteResultado r = deletarServicoComResultado(id);
+        return r != ServicoDeleteResultado.NAO_ENCONTRADO;
+    }
+
+    public ServicoDeleteResultado deletarServicoComResultado(Long id)
+    {
         if (!servicoRepository.existsById(id))
-            return false;
+            return ServicoDeleteResultado.NAO_ENCONTRADO;
 
         Servico servico = servicoRepository.findById(id).orElse(null);
 
         if (servico == null)
-            return false;
+            return ServicoDeleteResultado.NAO_ENCONTRADO;
+
+        boolean temAgendamentos = agendamentoRepository.existsByServicoId(id);
+
+        if (temAgendamentos) 
+        {
+            if (Boolean.FALSE.equals(servico.getAtivo()))
+                return ServicoDeleteResultado.JA_INATIVO;
+
+            servico.setAtivo(false);
+            servicoRepository.save(servico);
+            return ServicoDeleteResultado.DESATIVADO;
+        }
 
         String stored = servico.getImageStoredFilename();
         servicoRepository.deleteById(id);
@@ -90,7 +113,7 @@ public class ServicoService
             }
         }
 
-        return true;
+        return ServicoDeleteResultado.EXCLUIDO;
     }
 
     private int proximaOrdem()
@@ -116,6 +139,22 @@ public class ServicoService
         }
 
         servicoRepository.saveAll(porId.values());
+    }
+
+    public Servico ativarServico(Long id)
+    {
+        return servicoRepository.findById(id)
+            .map(s -> {
+                if (Boolean.TRUE.equals(s.getAtivo())) return s; // idempotente
+                s.setAtivo(true);
+                return servicoRepository.save(s);
+            })
+            .orElse(null);
+    }
+
+    public List<Servico> listarTodosServicos()
+    {
+        return servicoRepository.findAll(Sort.by(Sort.Direction.ASC, "ordem", "nome"));
     }
 
 }

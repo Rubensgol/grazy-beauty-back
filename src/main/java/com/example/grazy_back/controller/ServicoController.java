@@ -16,6 +16,7 @@ import com.example.grazy_back.dto.ApiResposta;
 import com.example.grazy_back.dto.OrdenacaoServicosRequest;
 import com.example.grazy_back.dto.ServicoRequest;
 import com.example.grazy_back.model.Servico;
+import com.example.grazy_back.enums.ServicoDeleteResultado;
 import com.example.grazy_back.service.ServicoService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,14 @@ public class ServicoController
     public ResponseEntity<ApiResposta<List<Servico>>> listarServicos() 
     {
         List<Servico> servicos = servicoService.listarServicos();
+        return ResponseEntity.ok(ApiResposta.of(servicos));
+    }
+
+    @GetMapping("/todos")
+    @Operation(summary = "Lista todos os serviços (ativos e inativos)")
+    public ResponseEntity<ApiResposta<List<Servico>>> listarTodosServicos()
+    {
+        List<Servico> servicos = servicoService.listarTodosServicos();
         return ResponseEntity.ok(ApiResposta.of(servicos));
     }
 
@@ -68,19 +77,36 @@ public class ServicoController
         return ResponseEntity.ok(ApiResposta.of(null));
     }
 
+    @PutMapping("/{id}/ativar")
+    @Operation(summary = "Reativa serviço inativo")
+    public ResponseEntity<ApiResposta<Servico>> ativarServico(@PathVariable Long id)
+    {
+        Servico ativado = servicoService.ativarServico(id);
+        if (ativado == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(ApiResposta.of(ativado));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Exclui serviço")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Serviço excluído"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Serviço não encontrado")
     })
-    public ResponseEntity<Void> deletarServico(@PathVariable Long id) 
+    public ResponseEntity<ApiResposta<Void>> deletarServico(@PathVariable Long id) 
     {
-        boolean deleted = servicoService.deletarServico(id);
+        ServicoDeleteResultado resultado = servicoService.deletarServicoComResultado(id);
 
-        if (!deleted) 
-            return ResponseEntity.notFound().build();
-
-        return ResponseEntity.noContent().build();
+        switch (resultado)
+        {
+            case NAO_ENCONTRADO:
+                return ResponseEntity.notFound().build();
+            case DESATIVADO:
+                return ResponseEntity.ok(new ApiResposta<Void>(true, null, "Serviço desativado", java.time.Instant.now()));
+            case JA_INATIVO:
+                return ResponseEntity.ok(new ApiResposta<Void>(true, null, "Serviço já estava desativado", java.time.Instant.now()));
+            case EXCLUIDO:
+            default:
+                return ResponseEntity.ok(new ApiResposta<Void>(true, null, "Serviço excluído", java.time.Instant.now()));
+        }
     }
 }

@@ -19,4 +19,5 @@ public class Servico
     private String imageStoredFilename;
     private Integer duracaoMinutos;
     private Integer ordem;
+    private Boolean ativo = true;
 }
