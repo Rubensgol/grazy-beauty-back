@@ -32,6 +32,7 @@ public class WebSecurityConfig
                     .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/servicos/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/conteudo/**").permitAll()
                     .requestMatchers(
                         "/actuator/**",
                         "/v3/api-docs/**",
