@@ -64,7 +64,10 @@ public class AgendamentoService
         a.setUsuario(usuarioOpt.get());
         a.setDataHora(dataHora);
         a.setObs(req.getObs());
-        return Optional.of(agendamentoRepository.save(a));
+
+        Agendamento salvo = agendamentoRepository.save(a);
+
+        return Optional.of(salvo);
     }
 
     public List<Agendamento> listar() 
@@ -79,8 +82,7 @@ public class AgendamentoService
     }
 
     public long contarNoMes(int ano, int mes)
-     {
-
+    {
         LocalDateTime inicio = LocalDateTime.of(ano, mes, 1, 0, 0, 0);
         LocalDateTime fim = inicio.plusMonths(1);
         return agendamentoRepository.countByDataHoraBetween(inicio, fim);
@@ -134,13 +136,17 @@ public class AgendamentoService
     public Optional<Agendamento> atualizar(Long id, AgendamentoRequest req)
     {
         return agendamentoRepository.findById(id).flatMap(a -> {
-            // Não permitir alterar se já finalizado
-            if (a.getStatus() == StatusAgendamentoEnum.FINALIZADO) return Optional.empty();
+            
+            if (a.getStatus() == StatusAgendamentoEnum.FINALIZADO)
+                return Optional.empty();
 
-            // Atualiza serviço se informado
-            if (req.getServicoId() != null) {
+            if (req.getServicoId() != null)
+            {
                 Optional<Servico> servicoOpt = servicoRepository.findById(req.getServicoId());
-                if (servicoOpt.isEmpty()) return Optional.empty();
+                
+                if (servicoOpt.isEmpty()) 
+                    return Optional.empty();
+
                 a.setServico(servicoOpt.get());
             }
 

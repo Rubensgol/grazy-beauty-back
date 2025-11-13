@@ -73,6 +73,8 @@ public class ConfiguracaoNotificacaoService
         c.setAtivo(false);
         c.setPeriodoMinutos(30L);
         c.setPlataformas(Map.of("EMAIL", "grazy@email.com"));
+        c.setResumoAtivo(false);
+        c.setResumoEmail(null);
         return c;
     }
 
