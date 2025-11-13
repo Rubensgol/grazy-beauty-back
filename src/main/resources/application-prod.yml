@@ -45,6 +45,10 @@ notificacao:
   config:
     file: notification-config.json
 
+conteudo:
+  config:
+    file: content-config.json
+
 management:
   endpoints:
     web:
