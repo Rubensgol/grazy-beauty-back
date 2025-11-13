@@ -2,12 +2,15 @@ package com.example.grazy_back.controller;
 
 import com.example.grazy_back.dto.LoginRequest;
 import com.example.grazy_back.dto.LoginResponse;
+import com.example.grazy_back.dto.ValidationResponse;
 import com.example.grazy_back.security.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -56,5 +59,34 @@ public class AuthController
         }
 
         return ResponseEntity.status(401).build();
+    }
+
+    @GetMapping("/validate")
+    @Operation(summary = "Valida token JWT", description = "Recebe um token JWT no header Authorization e valida se está válido")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Token válido", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Token inválido ou expirado", content = @Content)
+    })
+    public ResponseEntity<?> validate(@RequestHeader(value = "Authorization", required = false) String authHeader)
+    {
+        if (authHeader == null || ! authHeader.startsWith("Bearer "))
+            return ResponseEntity.status(401).body("Token não fornecido ou formato inválido");
+
+        String token = authHeader.substring(7);
+
+        try 
+        {
+            if (jwtUtil.validate(token)) 
+            {
+                String username = jwtUtil.getUsername(token);
+                return ResponseEntity.ok().body(new ValidationResponse(true, "Token válido", username));
+            }
+
+            return ResponseEntity.status(401).body(new ValidationResponse(false, "Token inválido", null));
+        }
+        catch (Exception e)
+        {
+            return ResponseEntity.status(401).body(new ValidationResponse(false, "Token inválido ou expirado: " + e.getMessage(), null));
+        }
     }
 }
