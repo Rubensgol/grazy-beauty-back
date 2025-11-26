@@ -81,6 +81,8 @@ public class NotificacaoAgendadaService
 
     private void executarVerificacao(ConfiguracaoNotificacao cfg, Map<String, String> plataformas)
     {
+        log.debug("[NOTIFICACAO] agendamento nos próximos {} min {}", LocalDateTime.now(), cfg.getPeriodoMinutos());
+
         LocalDateTime agora = LocalDateTime.now();
         LocalDateTime limite = agora.plusMinutes(cfg.getPeriodoMinutos());
 
