@@ -49,6 +49,8 @@ public class NotificacaoAgendadaService
     {
         ConfiguracaoNotificacao cfg = configService.obter();
 
+        log.info("Verificando notificacoes");
+
         if (!cfg.isAtivo())
             return; // silencioso se desativado
 
