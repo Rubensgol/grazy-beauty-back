@@ -81,31 +81,31 @@ public class NotificacaoAgendadaService
 
     private void executarVerificacao(ConfiguracaoNotificacao cfg, Map<String, String> plataformas)
     {
-        log.debug("[NOTIFICACAO] agendamento nos próximos {} min {}", LocalDateTime.now(), cfg.getPeriodoMinutos());
+        log.info("[NOTIFICACAO] agendamento nos próximos {} min {}", LocalDateTime.now(), cfg.getPeriodoMinutos());
 
         LocalDateTime agora = LocalDateTime.now();
         LocalDateTime limite = agora.plusMinutes(cfg.getPeriodoMinutos());
 
-        log.debug("[NOTIFICACAO] agendamento nos próximos {} min {}", limite, agora);
+        log.info("[NOTIFICACAO] agendamento nos próximos {} min {}", limite, agora);
 
 
         List<Agendamento> proximos = agendamentoRepository
             .findByStatusAndNotificadoFalseAndDataHoraBetweenOrderByDataHoraAsc(StatusAgendamentoEnum.PENDENTE, agora, limite);
 
-        log.debug("[NOTIFICACAO] agendamento nos próximos {} min {}, {}", proximos, limite, agora);
+        log.info("[NOTIFICACAO] agendamento nos próximos {} min {}, {}", proximos, limite, agora);
 
 
         if (proximos.isEmpty())
         {
-            log.debug("[NOTIFICACAO] Nenhum agendamento nos próximos {} min", cfg.getPeriodoMinutos());
+            log.info("[NOTIFICACAO] Nenhum agendamento nos próximos {} min", cfg.getPeriodoMinutos());
             return;
         }
 
-        log.debug("[NOTIFICACAO] agendamento nos próximos {} min {}, {}", proximos, limite, agora);
+        log.info("[NOTIFICACAO] agendamento nos próximos {} min {}, {}", proximos, limite, agora);
 
         for (Agendamento a : proximos) 
         {
-            log.debug("[NOTIFICACAO] agendamento nos próximos {} min", a);
+            log.info("[NOTIFICACAO] agendamento nos próximos {} min", a);
 
             for (String p : plataformas.keySet())
             {
