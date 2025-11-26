@@ -49,8 +49,6 @@ public class NotificacaoAgendadaService
     {
         ConfiguracaoNotificacao cfg = configService.obter();
 
-        log.info("Verificando notificacoes");
-
         if (!cfg.isAtivo())
             return; // silencioso se desativado
 
@@ -62,14 +60,22 @@ public class NotificacaoAgendadaService
             return;
         }
 
+        log.info("Ver se vai notificar");
+
         long agora = System.currentTimeMillis();
         long anterior = ultimaExecucaoEpochMillis.get();
         long intervaloMillis = periodoMin * 60_000L;
 
-        if (agora - anterior < intervaloMillis) 
+        if (agora - anterior < intervaloMillis)
+        {
+            log.info("Ver se vai notificar{} {} {}", agora, anterior, intervaloMillis);
             return; // ainda não chegou o tempo
+        }
+
 
         Map<String, String> plataformas = cfg.getPlataformas();
+
+        log.info("Ver as plataformas");
 
         if (plataformas == null || plataformas.isEmpty())
         {
