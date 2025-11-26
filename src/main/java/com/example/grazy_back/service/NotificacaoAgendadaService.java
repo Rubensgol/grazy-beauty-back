@@ -81,10 +81,6 @@ public class NotificacaoAgendadaService
 
     private void executarVerificacao(ConfiguracaoNotificacao cfg, Map<String, String> plataformas)
     {
-
-        log.info("[NOTIFICACAO] executando notificacao");
-
-
         LocalDateTime agora = LocalDateTime.now();
         LocalDateTime limite = agora.plusMinutes(cfg.getPeriodoMinutos());
 
@@ -97,8 +93,12 @@ public class NotificacaoAgendadaService
             return;
         }
 
+        log.debug("[NOTIFICACAO] agendamento nos próximos {} min {}, {}", proximos, limite, agora);
+
         for (Agendamento a : proximos) 
         {
+            log.debug("[NOTIFICACAO] agendamento nos próximos {} min", a);
+
             for (String p : plataformas.keySet())
             {
                 log.info("[NOTIFICACAO] Plataforma={} AgendamentoID={} Usuario={} Servico={} DataHora={} (dentro de ~{} min)",
