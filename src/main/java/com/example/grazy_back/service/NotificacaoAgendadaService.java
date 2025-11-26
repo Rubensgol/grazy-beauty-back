@@ -84,8 +84,14 @@ public class NotificacaoAgendadaService
         LocalDateTime agora = LocalDateTime.now();
         LocalDateTime limite = agora.plusMinutes(cfg.getPeriodoMinutos());
 
+        log.debug("[NOTIFICACAO] agendamento nos próximos {} min {}", limite, agora);
+
+
         List<Agendamento> proximos = agendamentoRepository
             .findByStatusAndNotificadoFalseAndDataHoraBetweenOrderByDataHoraAsc(StatusAgendamentoEnum.PENDENTE, agora, limite);
+
+        log.debug("[NOTIFICACAO] agendamento nos próximos {} min {}, {}", proximos, limite, agora);
+
 
         if (proximos.isEmpty())
         {
