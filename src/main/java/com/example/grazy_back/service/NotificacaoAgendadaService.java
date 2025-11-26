@@ -60,22 +60,14 @@ public class NotificacaoAgendadaService
             return;
         }
 
-        log.info("Ver se vai notificar");
-
         long agora = System.currentTimeMillis();
         long anterior = ultimaExecucaoEpochMillis.get();
         long intervaloMillis = periodoMin * 60_000L;
 
-        if (agora - anterior < intervaloMillis)
-        {
-            log.info("Ver se vai notificar{} {} {}", agora, anterior, intervaloMillis);
+        if (agora - anterior < intervaloMillis) 
             return; // ainda não chegou o tempo
-        }
-
 
         Map<String, String> plataformas = cfg.getPlataformas();
-
-        log.info("Ver as plataformas");
 
         if (plataformas == null || plataformas.isEmpty())
         {
@@ -89,6 +81,10 @@ public class NotificacaoAgendadaService
 
     private void executarVerificacao(ConfiguracaoNotificacao cfg, Map<String, String> plataformas)
     {
+
+        log.info("[NOTIFICACAO] executando notificacao");
+
+
         LocalDateTime agora = LocalDateTime.now();
         LocalDateTime limite = agora.plusMinutes(cfg.getPeriodoMinutos());
 
