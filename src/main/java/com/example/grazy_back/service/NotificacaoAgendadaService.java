@@ -160,7 +160,7 @@ public class NotificacaoAgendadaService
     }
 
     // Resumo diário dos agendamentos do dia (07:00). Pode ser ajustado depois via config.
-    @Scheduled(cron = "0 0 7 * * *")
+    @Scheduled(cron = "0 0 7 * * *", zone = "America/Sao_Paulo")
     public void enviarResumoDiario()
     {
         ConfiguracaoNotificacao cfg = configService.obter();
