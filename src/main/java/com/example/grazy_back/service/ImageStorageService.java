@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.grazy_back.model.ImageMetadata;
 import com.example.grazy_back.repository.ImageMetadataRepository;
+import com.example.grazy_back.security.TenantContext;
 
 @Service
 public class ImageStorageService
@@ -71,6 +72,7 @@ public class ImageStorageService
         }
 
     ImageMetadata meta = new ImageMetadata();
+        meta.setTenantId(TenantContext.getCurrentTenantId());
         meta.setOriginalFilename(file.getOriginalFilename());
         meta.setStoredFilename(stored);
         meta.setContentType(file.getContentType());
@@ -111,6 +113,7 @@ public class ImageStorageService
         }
 
     ImageMetadata meta = new ImageMetadata();
+        meta.setTenantId(TenantContext.getCurrentTenantId());
         meta.setOriginalFilename(Paths.get(uri.getPath()).getFileName().toString());
         meta.setStoredFilename(stored);
         meta.setContentType(contentType);
@@ -160,7 +163,16 @@ public class ImageStorageService
 
     public List<String> listAllStoredFilenames() 
     {
-        return repo.findAllByForServicoFalse().stream()
+        Long tenantId = TenantContext.getCurrentTenantId();
+        
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return repo.findAllByForServicoFalse().stream()
+                .map(img -> img.getStoredFilename())
+                .collect(Collectors.toList());
+        }
+        
+        return repo.findByTenantIdAndForServicoFalse(tenantId).stream()
             .map(img -> img.getStoredFilename())
             .collect(Collectors.toList());
     }

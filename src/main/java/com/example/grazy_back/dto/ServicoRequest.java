@@ -11,8 +11,8 @@ public class ServicoRequest
     private String nome;
     private String descricao;
     private Double preco;
-    @JsonAlias({"imageStoredFilename", "image_stored_filename"})
-    private String storedFilename;
+    @JsonAlias({"storedFilename", "stored_filename"})
+    private String imageStoredFilename;
     private Integer duracaoMinutos;
     private Integer ordem;
 }

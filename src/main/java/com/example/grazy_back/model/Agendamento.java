@@ -23,6 +23,9 @@ public class Agendamento
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(name = "tenant_id")
+    private Long tenantId;
 
     @ManyToOne
     @JoinColumn(name = "servico_id", nullable = false)

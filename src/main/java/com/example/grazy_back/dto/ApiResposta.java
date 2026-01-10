@@ -21,6 +21,11 @@ public class ApiResposta<T>
         return new ApiResposta<>(true, data, null, Instant.now());
     }
 
+    public static <T> ApiResposta<T> of(T data, String message) 
+    {
+        return new ApiResposta<>(true, data, message, Instant.now());
+    }
+
     public static <T> ApiResposta<T> error(String message) 
     {
         return new ApiResposta<>(false, null, message, Instant.now());

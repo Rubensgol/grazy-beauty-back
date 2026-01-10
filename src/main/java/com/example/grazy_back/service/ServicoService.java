@@ -14,6 +14,7 @@ import com.example.grazy_back.enums.ServicoDeleteResultado;
 import com.example.grazy_back.model.Servico;
 import com.example.grazy_back.repository.ServicoRepository;
 import com.example.grazy_back.repository.AgendamentoRepository;
+import com.example.grazy_back.security.TenantContext;
 
 @Service
 public class ServicoService 
@@ -29,7 +30,15 @@ public class ServicoService
 
     public List<Servico> listarServicos() 
     {
-        return servicoRepository.findByAtivoTrue(Sort.by(Sort.Direction.ASC, "ordem", "nome"));
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Sort sort = Sort.by(Sort.Direction.ASC, "ordem", "nome");
+        
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return servicoRepository.findByAtivoTrue(sort);
+        }
+        
+        return servicoRepository.findByTenantIdAndAtivoTrue(tenantId, sort);
     }
 
     public Servico buscarServicoPorId(Long id) 
@@ -40,6 +49,7 @@ public class ServicoService
     public Servico salvarServico(ServicoRequest servico) 
     {
         Servico novoServico = new Servico();
+        novoServico.setTenantId(TenantContext.getCurrentTenantId());
         novoServico.setNome(servico.getNome());
         novoServico.setDescricao(servico.getDescricao());
         novoServico.setPreco(servico.getPreco());
@@ -51,8 +61,8 @@ public class ServicoService
         else
             novoServico.setOrdem(proximaOrdem());
         
-        if (servico.getStoredFilename() != null) 
-            novoServico.setImageStoredFilename(servico.getStoredFilename());
+        if (servico.getImageStoredFilename() != null) 
+            novoServico.setImageStoredFilename(servico.getImageStoredFilename());
 
         return servicoRepository.save(novoServico);
     }
@@ -63,7 +73,7 @@ public class ServicoService
             if (servico.getNome() != null) existing.setNome(servico.getNome());
             if (servico.getDescricao() != null) existing.setDescricao(servico.getDescricao());
             if (servico.getPreco() != null) existing.setPreco(servico.getPreco());
-            if (servico.getStoredFilename() != null) existing.setImageStoredFilename(servico.getStoredFilename());
+            if (servico.getImageStoredFilename() != null) existing.setImageStoredFilename(servico.getImageStoredFilename());
             if (servico.getDuracaoMinutos() != null) existing.setDuracaoMinutos(servico.getDuracaoMinutos());
             if (servico.getOrdem() != null) existing.setOrdem(servico.getOrdem());
             return servicoRepository.save(existing);
@@ -154,7 +164,15 @@ public class ServicoService
 
     public List<Servico> listarTodosServicos()
     {
-        return servicoRepository.findAll(Sort.by(Sort.Direction.ASC, "ordem", "nome"));
+        Long tenantId = TenantContext.getCurrentTenantId();
+        Sort sort = Sort.by(Sort.Direction.ASC, "ordem", "nome");
+        
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return servicoRepository.findAll(sort);
+        }
+        
+        return servicoRepository.findByTenantId(tenantId);
     }
 
 }

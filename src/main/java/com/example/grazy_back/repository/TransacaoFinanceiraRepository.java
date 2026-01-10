@@ -16,4 +16,6 @@ import com.example.grazy_back.model.TransacaoFinanceira;
 public interface TransacaoFinanceiraRepository extends JpaRepository<TransacaoFinanceira, Long>
 {
     List<TransacaoFinanceira> findByTipo(TipoTransacaoEnum tipo);
+    List<TransacaoFinanceira> findByTenantId(Long tenantId);
+    List<TransacaoFinanceira> findByTenantIdAndTipo(Long tenantId, TipoTransacaoEnum tipo);
 }

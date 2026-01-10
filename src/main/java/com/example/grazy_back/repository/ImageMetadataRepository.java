@@ -10,4 +10,6 @@ public interface ImageMetadataRepository extends JpaRepository<ImageMetadata, Lo
 {
 	Optional<ImageMetadata> findByStoredFilename(String storedFilename);
 	List<ImageMetadata> findAllByForServicoFalse();
+	List<ImageMetadata> findByTenantId(Long tenantId);
+	List<ImageMetadata> findByTenantIdAndForServicoFalse(Long tenantId);
 }

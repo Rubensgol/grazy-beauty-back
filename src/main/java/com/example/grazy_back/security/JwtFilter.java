@@ -7,12 +7,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
-import java.util.List;
 
 public class JwtFilter extends OncePerRequestFilter 
 {
@@ -33,7 +32,24 @@ public class JwtFilter extends OncePerRequestFilter
             if (jwtUtil.validate(token))
             {
                 String username = jwtUtil.getUsername(token);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+                String role = jwtUtil.getRole(token);
+                Long tenantId = jwtUtil.getTenantId(token);
+                
+                // Cria lista de authorities baseado na role
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                if (role != null) 
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                else 
+                    authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                
+                // Cria autenticação com informações adicionais
+                JwtAuthenticationToken authentication = new JwtAuthenticationToken(
+                    username, 
+                    authorities, 
+                    role, 
+                    tenantId
+                );
+                
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }

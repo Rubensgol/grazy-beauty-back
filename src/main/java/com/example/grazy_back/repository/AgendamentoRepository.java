@@ -17,4 +17,10 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long>
 	List<Agendamento> findByStatusAndNotificadoFalseAndDataHoraBetweenOrderByDataHoraAsc(StatusAgendamentoEnum status, LocalDateTime inicio, LocalDateTime fim);
 
     boolean existsByServicoId(Long servicoId);
+    
+    // Métodos filtrados por tenant
+    List<Agendamento> findByTenantId(Long tenantId);
+    List<Agendamento> findByTenantIdAndDataHoraBetweenOrderByDataHoraAsc(Long tenantId, LocalDateTime inicio, LocalDateTime fim);
+    List<Agendamento> findByTenantIdAndStatusAndDataHoraBetweenOrderByDataHoraAsc(Long tenantId, StatusAgendamentoEnum status, LocalDateTime inicio, LocalDateTime fim);
+    long countByTenantIdAndDataHoraBetween(Long tenantId, LocalDateTime inicio, LocalDateTime fim);
 }

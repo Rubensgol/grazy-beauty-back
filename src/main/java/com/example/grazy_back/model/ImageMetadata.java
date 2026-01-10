@@ -2,6 +2,7 @@ package com.example.grazy_back.model;
 
 import java.time.Instant;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,6 +17,9 @@ public class ImageMetadata
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(name = "tenant_id")
+    private Long tenantId;
 
     private String originalFilename;
     private String storedFilename;

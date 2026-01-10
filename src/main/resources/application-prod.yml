@@ -61,6 +61,9 @@ management:
         enabled: true
 
 app:
+  domain: ${APP_DOMAIN:grazybeauty.com.br}
+  url:
+    base: ${APP_BASE_URL:https://grazybeauty.com.br}
   admin:
     username: "${ADMIN_USERNAME}"
     password: "${ADMIN_PASSWORD}"

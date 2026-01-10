@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.example.grazy_back.DTO.ClienteRequestDTO;
 import com.example.grazy_back.model.Cliente;
 import com.example.grazy_back.repository.ClienteRepository;
+import com.example.grazy_back.security.TenantContext;
 
 @Service
 public class ClienteService 
@@ -22,6 +23,7 @@ public class ClienteService
     public Cliente criar(ClienteRequestDTO req) 
     {
         Cliente u = new Cliente();
+        u.setTenantId(TenantContext.getCurrentTenantId());
         u.setNome(req.getNome());
         u.setTelefone(req.getTelefone());
         u.setEmail(req.getEmail());
@@ -31,12 +33,27 @@ public class ClienteService
 
     public List<Cliente> listarTodos()
     {
-        return repository.findAll();
+        Long tenantId = TenantContext.getCurrentTenantId();
+        
+        // SUPER_ADMIN vê todos, tenant vê apenas os seus
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return repository.findAll();
+        }
+        
+        return repository.findByTenantId(tenantId);
     }
 
     public Optional<Cliente> atualizar(Long id, ClienteRequestDTO req) 
     {
         return repository.findById(id).map(u -> {
+            // Verificar se cliente pertence ao tenant
+            Long tenantId = TenantContext.getCurrentTenantId();
+            if (tenantId != null && !tenantId.equals(u.getTenantId())) 
+            {
+                throw new IllegalStateException("Cliente não pertence ao seu tenant");
+            }
+            
             if (req.getNome() != null) u.setNome(req.getNome());
             if (req.getTelefone() != null) u.setTelefone(req.getTelefone());
             if (req.getEmail() != null) u.setEmail(req.getEmail());

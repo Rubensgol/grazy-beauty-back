@@ -1,5 +1,6 @@
 package com.example.grazy_back.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -9,24 +10,34 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 @Configuration
 public class CorsConfig implements WebMvcConfigurer 
 {
+    @Value("${app.domain:grazybeauty.com.br}")
+    private String appDomain;
+
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry)
     {
         registry.addMapping("/**")
-                .allowedOrigins(
-                        "http://localhost:8000",
+                .allowedOriginPatterns(
+                        // Desenvolvimento local
+                        "http://localhost:*",
+                        "https://localhost:*",
+                        // IP direto
                         "http://144.22.228.196",
+                        "https://144.22.228.196",
+                        // Domínio principal
                         "http://grazybeauty.com.br",
                         "http://www.grazybeauty.com.br",
-                        "https://144.22.228.196",
                         "https://grazybeauty.com.br",
                         "https://www.grazybeauty.com.br",
-                        "https://localhost",
-                        "http://localhost"      
+                        // Subdomínios (para multi-tenant)
+                        "http://*.grazybeauty.com.br",
+                        "https://*.grazybeauty.com.br"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
-                .allowCredentials(true);
+                .exposedHeaders("Authorization")
+                .allowCredentials(true)
+                .maxAge(3600);
     }
     
     @Override

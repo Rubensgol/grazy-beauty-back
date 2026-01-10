@@ -11,4 +11,6 @@ import java.util.List;
 public interface ServicoRepository extends JpaRepository<Servico, Long> 
 {
 	List<Servico> findByAtivoTrue(Sort sort);
+	List<Servico> findByTenantId(Long tenantId);
+	List<Servico> findByTenantIdAndAtivoTrue(Long tenantId, Sort sort);
 }

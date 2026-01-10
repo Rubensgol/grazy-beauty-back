@@ -1,5 +1,6 @@
 package com.example.grazy_back.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -15,7 +16,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtUtil 
 {
-
     @Value("${app.jwt.secret:${JWT_SECRET}}")
     private String jwtSecret;
 
@@ -42,12 +42,15 @@ public class JwtUtil
         {
             return Keys.hmacShaKeyFor(keyBytes);
         }
-         catch (WeakKeyException e) 
+        catch (WeakKeyException e) 
         {
             throw new IllegalStateException("JWT secret too weak. Provide a 256-bit (32+ bytes) secret. You can use a base64-encoded value.", e);
         }
     }
 
+    /**
+     * Gera token simples (compatibilidade com código existente).
+     */
     public String generateToken(String username) 
     {
         Date now = new Date();
@@ -60,9 +63,58 @@ public class JwtUtil
                 .compact();
     }
 
+    /**
+     * Gera token com informações de role e tenant.
+     */
+    public String generateToken(String username, String role, Long tenantId) 
+    {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + expirationMs);
+        
+        var builder = Jwts.builder()
+                .setSubject(username)
+                .claim("role", role)
+                .setIssuedAt(now)
+                .setExpiration(expiry);
+        
+        if (tenantId != null) 
+        {
+            builder.claim("tenantId", tenantId);
+        }
+        
+        return builder.signWith(key(), SignatureAlgorithm.HS256).compact();
+    }
+
     public String getUsername(String token) 
     {
-        return Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token).getBody().getSubject();
+        return getClaims(token).getSubject();
+    }
+
+    public String getRole(String token) 
+    {
+        Claims claims = getClaims(token);
+        return claims.get("role", String.class);
+    }
+
+    public Long getTenantId(String token) 
+    {
+        Claims claims = getClaims(token);
+        Object tenantIdObj = claims.get("tenantId");
+        if (tenantIdObj == null) return null;
+        if (tenantIdObj instanceof Number) 
+        {
+            return ((Number) tenantIdObj).longValue();
+        }
+        return Long.valueOf(tenantIdObj.toString());
+    }
+
+    public Claims getClaims(String token) 
+    {
+        return Jwts.parserBuilder()
+                .setSigningKey(key())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public boolean validate(String token)
@@ -76,5 +128,10 @@ public class JwtUtil
         {
             return false;
         }
+    }
+
+    public long getExpirationMs() 
+    {
+        return expirationMs;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.grazy_back.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,6 +14,10 @@ public class Servico
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(name = "tenant_id")
+    private Long tenantId;
+    
     private String nome;
     private String descricao;
     private Double preco;

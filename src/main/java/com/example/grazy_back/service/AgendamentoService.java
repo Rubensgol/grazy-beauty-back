@@ -21,6 +21,7 @@ import com.example.grazy_back.repository.ServicoRepository;
 import com.example.grazy_back.repository.ClienteRepository;
 import com.example.grazy_back.repository.TransacaoFinanceiraRepository;
 import com.example.grazy_back.enums.TipoTransacaoEnum;
+import com.example.grazy_back.security.TenantContext;
 
 @Service
 public class AgendamentoService 
@@ -60,6 +61,7 @@ public class AgendamentoService
         }
 
         Agendamento a = new Agendamento();
+        a.setTenantId(TenantContext.getCurrentTenantId());
         a.setServico(servicoOpt.get());
         a.setUsuario(usuarioOpt.get());
         a.setDataHora(dataHora);
@@ -72,20 +74,41 @@ public class AgendamentoService
 
     public List<Agendamento> listar() 
     {
-        return agendamentoRepository.findAll();
+        Long tenantId = TenantContext.getCurrentTenantId();
+        
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return agendamentoRepository.findAll();
+        }
+        
+        return agendamentoRepository.findByTenantId(tenantId);
     }
 
     public List<Agendamento> listarPorDia(LocalDateTime inicioDia)
     {
+        Long tenantId = TenantContext.getCurrentTenantId();
         LocalDateTime fimDia = inicioDia.plusDays(1);
-        return agendamentoRepository.findByDataHoraBetweenOrderByDataHoraAsc(inicioDia, fimDia);
+        
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return agendamentoRepository.findByDataHoraBetweenOrderByDataHoraAsc(inicioDia, fimDia);
+        }
+        
+        return agendamentoRepository.findByTenantIdAndDataHoraBetweenOrderByDataHoraAsc(tenantId, inicioDia, fimDia);
     }
 
     public long contarNoMes(int ano, int mes)
     {
+        Long tenantId = TenantContext.getCurrentTenantId();
         LocalDateTime inicio = LocalDateTime.of(ano, mes, 1, 0, 0, 0);
         LocalDateTime fim = inicio.plusMonths(1);
-        return agendamentoRepository.countByDataHoraBetween(inicio, fim);
+        
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return agendamentoRepository.countByDataHoraBetween(inicio, fim);
+        }
+        
+        return agendamentoRepository.countByTenantIdAndDataHoraBetween(tenantId, inicio, fim);
     }
 
     public Optional<Agendamento> finalizar(Long id) 
@@ -104,6 +127,7 @@ public class AgendamentoService
             if (servico != null && usuario != null && servico.getPreco() != null) 
             {
                 TransacaoFinanceira t = new TransacaoFinanceira();
+                t.setTenantId(a.getTenantId());
                 t.setValor(servico.getPreco());
                 t.setDescricao("Serviço: " + servico.getNome() + " - Cliente: " + usuario.getNome());
                 t.setTipo(TipoTransacaoEnum.RECEITA);
