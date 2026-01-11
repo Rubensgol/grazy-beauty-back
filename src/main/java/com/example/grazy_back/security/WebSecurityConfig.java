@@ -52,6 +52,10 @@ public class WebSecurityConfig
                     .requestMatchers(HttpMethod.GET, "/api/servicos/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/conteudo/**").permitAll()
                     
+                    // Rotas públicas de verificação de tenant (via Host header)
+                    .requestMatchers(HttpMethod.GET, "/api/tenant/publico/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/tenant/info").permitAll()
+                    
                     // Swagger e Actuator
                     .requestMatchers(
                         "/actuator/**",

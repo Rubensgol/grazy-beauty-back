@@ -12,17 +12,20 @@ import com.example.grazy_back.dto.ApiResposta;
 import com.example.grazy_back.model.Conteudo;
 import com.example.grazy_back.model.ConteudoAbout;
 import com.example.grazy_back.model.ConteudoHero;
+import com.example.grazy_back.security.TenantContext;
 import com.example.grazy_back.service.ConteudoService;
 import com.example.grazy_back.service.TenantService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/conteudo")
 @Tag(name = "Conteúdo", description = "Gerencia conteúdo público do site (hero e about)")
 @RequiredArgsConstructor
+@Slf4j
 public class ConteudoController 
 {
     private final ConteudoService service;
@@ -36,6 +39,29 @@ public class ConteudoController
     public ResponseEntity<ApiResposta<Conteudo>> get() 
     {
         return ResponseEntity.ok(ApiResposta.of(service.obter()));
+    }
+    
+    /**
+     * Busca conteúdo público baseado no Host da requisição.
+     * Usa o TenantFilter para identificar o tenant automaticamente.
+     */
+    @GetMapping("/publico")
+    @Operation(summary = "Buscar conteúdo público via Host", 
+               description = "Identifica o tenant pelo cabeçalho Host da requisição")
+    public ResponseEntity<ApiResposta<Conteudo>> getPublico() 
+    {
+        Long tenantId = TenantContext.getTenantIdFromRequest();
+        String subdominio = TenantContext.getSubdominio();
+        
+        log.info("Buscando conteúdo público - TenantId: {}, Subdomínio: {}", tenantId, subdominio);
+        
+        if (tenantId != null) 
+        {
+            Conteudo conteudo = service.obterPorTenant(tenantId);
+            return ResponseEntity.ok(ApiResposta.of(conteudo));
+        }
+        
+        return ResponseEntity.notFound().build();
     }
 
     /**
