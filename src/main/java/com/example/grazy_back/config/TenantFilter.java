@@ -43,7 +43,7 @@ public class TenantFilter extends OncePerRequestFilter
         
         String host = request.getHeader("Host");
         
-        if (host != null && !host.isEmpty()) 
+        if (host != null && ! host.isEmpty()) 
         {
             log.debug("Processando requisição para Host: {}", host);
             
@@ -79,7 +79,8 @@ public class TenantFilter extends OncePerRequestFilter
         // 1. Tenta buscar por domínio customizado
         Optional<Tenant> tenant = tenantService.buscarPorDominioCustomizado(host);
         
-        if (tenant.isPresent()) {
+        if (tenant.isPresent()) 
+        {
             log.debug("Tenant encontrado por domínio customizado: {}", host);
             return tenant;
         }

@@ -35,12 +35,37 @@ public class AuthService
 
     /**
      * Autentica um usuário do sistema.
+     * @param email Email do usuário
+     * @param senha Senha do usuário
+     * @param tenantIdFromHost ID do tenant identificado pelo Host (pode ser null)
      */
-    public Optional<LoginResponseV2> autenticar(String email, String senha) 
+    public Optional<LoginResponseV2> autenticar(String email, String senha, Long tenantIdFromHost) 
     {
         return usuarioRepository.findByEmail(email)
             .filter(usuario -> passwordEncoder.matches(senha, usuario.getSenha()))
             .filter(Usuario::isAtivo)
+            .filter(usuario -> {
+                // VALIDAÇÃO CRÍTICA: Verificar se o usuário pertence ao tenant correto
+                if (tenantIdFromHost != null) 
+                {
+                    // Se há um tenant identificado pelo Host, o usuário DEVE pertencer a ele
+                    if (usuario.getTenant() == null) 
+                    {
+                        log.warn("Tentativa de login de usuário sem tenant em domínio com tenant: {} (tenant esperado: {})", 
+                            email, tenantIdFromHost);
+                        return false;
+                    }
+                    
+                    if (!usuario.getTenant().getId().equals(tenantIdFromHost)) 
+                    {
+                        log.warn("Tentativa de login com tenant incorreto: {} (tenant do usuário: {}, tenant do host: {})", 
+                            email, usuario.getTenant().getId(), tenantIdFromHost);
+                        return false;
+                    }
+                }
+                // Se não há tenant do host (ex: localhost, admin master), permitir qualquer usuário
+                return true;
+            })
             .map(usuario -> {
                 // Verifica se tenant está ativo (para não super admin)
                 if (usuario.getTenant() != null && !usuario.getTenant().isAtivo()) 
@@ -58,6 +83,8 @@ public class AuthService
                     usuario.getTenant() != null ? usuario.getTenant().getId() : null);
 
                 Tenant tenant = usuario.getTenant();
+                
+                log.info("Login bem-sucedido: {} (tenant: {})", email, tenant != null ? tenant.getId() : "nenhum");
                 
                 return LoginResponseV2.builder()
                     .token(token)

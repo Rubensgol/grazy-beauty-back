@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -49,7 +50,9 @@ public class AuthController
         @ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
         @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
     })
-    public ResponseEntity<ApiResposta<LoginResponseV2>> loginV2(@RequestBody LoginRequest req) 
+    public ResponseEntity<ApiResposta<LoginResponseV2>> loginV2(
+            @RequestBody LoginRequest req,
+            HttpServletRequest request) 
     {
         if (req.getUsername() == null || req.getSenha() == null)
         {
@@ -57,10 +60,14 @@ public class AuthController
                 .body(new ApiResposta<>(false, null, "Email e senha são obrigatórios", java.time.Instant.now()));
         }
 
-        return authService.autenticar(req.getUsername(), req.getSenha())
+        // Obter tenant do TenantFilter (identificado pelo Host)
+        Long tenantIdFromHost = (Long) request.getAttribute("tenantId");
+        req.setTenantId(tenantIdFromHost);
+
+        return authService.autenticar(req.getUsername(), req.getSenha(), tenantIdFromHost)
             .map(response -> ResponseEntity.ok(ApiResposta.of(response, "Login realizado com sucesso")))
             .orElse(ResponseEntity.status(401)
-                .body(new ApiResposta<>(false, null, "Credenciais inválidas ou conta inativa", java.time.Instant.now())));
+                .body(new ApiResposta<>(false, null, "Credenciais inválidas, conta inativa ou tenant incorreto", java.time.Instant.now())));
     }
 
     /**
@@ -74,13 +81,19 @@ public class AuthController
         @ApiResponse(responseCode = "400", description = "Requisição inválida (faltando usuário ou senha)", content = @Content),
         @ApiResponse(responseCode = "401", description = "Credenciais inválidas", content = @Content)
     })
-    public ResponseEntity<?> login(@RequestBody LoginRequest req) 
+    public ResponseEntity<?> login(
+            @RequestBody LoginRequest req,
+            jakarta.servlet.http.HttpServletRequest request) 
     {
         if (req.getUsername() == null || req.getSenha() == null)
             return ResponseEntity.badRequest().build();
         
+        // Obter tenant do TenantFilter (identificado pelo Host)
+        Long tenantIdFromHost = (Long) request.getAttribute("tenantId");
+        req.setTenantId(tenantIdFromHost);
+        
         // Primeiro tenta autenticar via banco (novo sistema)
-        var authResult = authService.autenticar(req.getUsername(), req.getSenha());
+        var authResult = authService.autenticar(req.getUsername(), req.getSenha(), tenantIdFromHost);
         if (authResult.isPresent()) 
         {
             // Retorna resposta antiga para compatibilidade
@@ -88,7 +101,8 @@ public class AuthController
         }
 
         // Fallback para admin fixo (compatibilidade) - GERA TOKEN COM ROLE SUPER_ADMIN
-        if (req.getUsername().equals(adminUser) && req.getSenha().equals(adminPass)) 
+        // Super admin NÃO precisa pertencer a um tenant específico
+        if (tenantIdFromHost == null && req.getUsername().equals(adminUser) && req.getSenha().equals(adminPass)) 
         {
             String token = jwtUtil.generateToken(adminUser, "SUPER_ADMIN", null);
             return ResponseEntity.ok(new LoginResponse(token));
