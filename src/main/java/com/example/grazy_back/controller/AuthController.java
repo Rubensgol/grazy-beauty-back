@@ -7,6 +7,7 @@ import com.example.grazy_back.dto.LoginResponseV2;
 import com.example.grazy_back.dto.ValidationResponse;
 import com.example.grazy_back.security.JwtUtil;
 import com.example.grazy_back.service.AuthService;
+import com.example.grazy_back.service.TenantService;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,7 @@ public class AuthController
 {
     private final JwtUtil jwtUtil;
     private final AuthService authService;
+    private final TenantService tenantService;
 
     @Value("${app.admin.username:admin}")
     private String adminUser;
@@ -66,22 +68,40 @@ public class AuthController
         String hostHeader = request.getHeader("Host");
         
         // Log para diagnóstico
-        log.debug("Login V2 - Host: {}, TenantId resolvido: {}, Usuario: {}", 
-            hostHeader, tenantIdFromHost, req.getUsername());
+        log.debug("Login V2 - Host: {}, TenantId resolvido do Host: {}, TenantNome enviado: {}, Usuario: {}", 
+            hostHeader, tenantIdFromHost, req.getTenantNome(), req.getUsername());
         
-        // Se nenhum tenant foi identificado pelo host, retornar erro específico
-        if (tenantIdFromHost == null) 
+        // Determinar o tenant ID final
+        Long finalTenantId = tenantIdFromHost;
+        
+        // Se o frontend enviou tenantNome mas não temos ID do host, buscar pelo nome
+        if (finalTenantId == null && req.getTenantNome() != null && !req.getTenantNome().isEmpty()) 
         {
-            log.warn("Tentativa de login sem tenant identificado. Host: {}", hostHeader);
+            log.debug("Buscando tenant pelo nome: {}", req.getTenantNome());
+            var tenant = tenantService.buscarPorSubdominio(req.getTenantNome())
+                .or(() -> tenantService.buscarPorDominioCustomizado(req.getTenantNome()));
+            
+            if (tenant.isPresent()) 
+            {
+                finalTenantId = tenant.get().getId();
+                log.debug("Tenant encontrado pelo nome '{}': ID {}", req.getTenantNome(), finalTenantId);
+            }
+        }
+        
+        // Se ainda não temos tenant ID, retornar erro
+        if (finalTenantId == null) 
+        {
+            log.warn("Tentativa de login sem tenant identificado. Host: {}, TenantNome: {}", 
+                hostHeader, req.getTenantNome());
             return ResponseEntity.status(403)
                 .body(new ApiResposta<>(false, null, 
                     "Tenant não identificado. Verifique se você está acessando o domínio correto.", 
                     java.time.Instant.now()));
         }
         
-        req.setTenantId(tenantIdFromHost);
+        req.setTenantId(finalTenantId);
 
-        return authService.autenticar(req.getUsername(), req.getSenha(), tenantIdFromHost)
+        return authService.autenticar(req.getUsername(), req.getSenha(), finalTenantId)
             .map(response -> ResponseEntity.ok(ApiResposta.of(response, "Login realizado com sucesso")))
             .orElse(ResponseEntity.status(401)
                 .body(new ApiResposta<>(false, null, "Credenciais inválidas, conta inativa ou tenant incorreto", java.time.Instant.now())));

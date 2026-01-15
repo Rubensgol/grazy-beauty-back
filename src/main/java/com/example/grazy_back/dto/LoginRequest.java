@@ -8,6 +8,7 @@ public class LoginRequest
     private String usuario;
     private String senha;
     private Long tenantId;
+    private String tenantNome; // Nome/subdomínio do tenant (ex: "default", "joao")
 
     public String getUsername() 
     { 
