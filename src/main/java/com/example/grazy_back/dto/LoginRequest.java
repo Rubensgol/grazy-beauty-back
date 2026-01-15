@@ -7,7 +7,7 @@ public class LoginRequest
 {
     private String usuario;
     private String senha;
-    private Long tenantId; // ID do tenant identificado pelo Host
+    private Long tenantId;
 
     public String getUsername() 
     { 

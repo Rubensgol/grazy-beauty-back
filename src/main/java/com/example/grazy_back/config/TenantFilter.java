@@ -32,7 +32,7 @@ public class TenantFilter extends OncePerRequestFilter
 {
     private final TenantService tenantService;
     
-    @Value("${app.domain:seusistema.com}")
+    @Value("${app.domain:grazybeauty.com.br}")
     private String appDomain;
 
     @Override
@@ -85,7 +85,23 @@ public class TenantFilter extends OncePerRequestFilter
             return tenant;
         }
         
-        // 2. Tenta extrair subdomínio
+        // 2. Se for o domínio principal (grazybeauty.com.br ou www.grazybeauty.com.br)
+        // tenta buscar um tenant padrão
+        if (host.equals(appDomain) || host.equals("www." + appDomain))
+        {
+            log.debug("Domínio principal acessado: {}", host);
+            // Tenta buscar tenant com subdomínio "default" ou "www"
+            tenant = tenantService.buscarPorSubdominio("default")
+                .or(() -> tenantService.buscarPorSubdominio("www"));
+            
+            if (tenant.isPresent())
+            {
+                log.debug("Tenant padrão encontrado para domínio principal");
+                return tenant;
+            }
+        }
+        
+        // 3. Tenta extrair subdomínio
         if (host.endsWith("." + appDomain)) 
         {
             String subdominio = extrairSubdominio(host);
@@ -102,14 +118,14 @@ public class TenantFilter extends OncePerRequestFilter
             }
         }
         
-        // 3. Para localhost/desenvolvimento, tenta como subdomínio direto
+        // 4. Para localhost/desenvolvimento, tenta como subdomínio direto
         if (host.equals("localhost") || host.startsWith("127.0.0.1") || host.startsWith("192.168.")) 
         {
             log.debug("Host local detectado, não identificando tenant automaticamente");
             return Optional.empty();
         }
         
-        log.debug("Tenant não encontrado para host: {}", host);
+        log.warn("Tenant não encontrado para host: {}", host);
         return Optional.empty();
     }
 

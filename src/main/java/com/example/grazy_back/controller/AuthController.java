@@ -25,11 +25,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Autenticação", description = "Endpoints de autenticação e emissão de token JWT")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController 
 {
     private final JwtUtil jwtUtil;
@@ -60,8 +62,23 @@ public class AuthController
                 .body(new ApiResposta<>(false, null, "Email e senha são obrigatórios", java.time.Instant.now()));
         }
 
-        // Obter tenant do TenantFilter (identificado pelo Host)
         Long tenantIdFromHost = (Long) request.getAttribute("tenantId");
+        String hostHeader = request.getHeader("Host");
+        
+        // Log para diagnóstico
+        log.debug("Login V2 - Host: {}, TenantId resolvido: {}, Usuario: {}", 
+            hostHeader, tenantIdFromHost, req.getUsername());
+        
+        // Se nenhum tenant foi identificado pelo host, retornar erro específico
+        if (tenantIdFromHost == null) 
+        {
+            log.warn("Tentativa de login sem tenant identificado. Host: {}", hostHeader);
+            return ResponseEntity.status(403)
+                .body(new ApiResposta<>(false, null, 
+                    "Tenant não identificado. Verifique se você está acessando o domínio correto.", 
+                    java.time.Instant.now()));
+        }
+        
         req.setTenantId(tenantIdFromHost);
 
         return authService.autenticar(req.getUsername(), req.getSenha(), tenantIdFromHost)
