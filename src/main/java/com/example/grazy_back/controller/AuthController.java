@@ -44,6 +44,14 @@ public class AuthController
 
     @Value("${app.admin.password:admin}")
     private String adminPass;
+    
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        // Log para diagnóstico - mostra apenas se o admin está configurado (não mostra a senha)
+        log.info("[AUTH] Super Admin configurado - Username: '{}', Password definida: {}", 
+            adminUser, 
+            adminPass != null && !adminPass.isEmpty() && !adminPass.equals("admin") ? "SIM (customizada)" : "DEFAULT");
+    }
 
     /**
      * Login V2 - Autenticação com banco de dados (tenants).
@@ -127,24 +135,32 @@ public class AuthController
         
         // Obter tenant do TenantFilter (identificado pelo Host)
         Long tenantIdFromHost = (Long) request.getAttribute("tenantId");
+        String hostHeader = request.getHeader("Host");
         req.setTenantId(tenantIdFromHost);
         
-        // Primeiro tenta autenticar via banco (novo sistema)
-        var authResult = authService.autenticar(req.getUsername(), req.getSenha(), tenantIdFromHost);
-        if (authResult.isPresent()) 
+        // Log para diagnóstico do Super Admin
+        log.info("[AUTH] Login attempt - User: {}, Host: {}, TenantId from Host: {}, Admin configurado: {}", 
+            req.getUsername(), hostHeader, tenantIdFromHost, adminUser);
+        
+        // SUPER ADMIN: Verificar PRIMEIRO se são as credenciais do admin fixo
+        // Super admin pode logar de qualquer lugar (não depende de tenant)
+        if (req.getUsername().equals(adminUser) && req.getSenha().equals(adminPass)) 
         {
-            // Retorna resposta antiga para compatibilidade
-            return ResponseEntity.ok(new LoginResponse(authResult.get().getToken()));
-        }
-
-        // Fallback para admin fixo (compatibilidade) - GERA TOKEN COM ROLE SUPER_ADMIN
-        // Super admin NÃO precisa pertencer a um tenant específico
-        if (tenantIdFromHost == null && req.getUsername().equals(adminUser) && req.getSenha().equals(adminPass)) 
-        {
+            log.info("[AUTH] Super Admin login bem-sucedido: {}", adminUser);
             String token = jwtUtil.generateToken(adminUser, "SUPER_ADMIN", null);
             return ResponseEntity.ok(new LoginResponse(token));
         }
+        
+        // Usuários normais: tenta autenticar via banco
+        var authResult = authService.autenticar(req.getUsername(), req.getSenha(), tenantIdFromHost);
+        if (authResult.isPresent()) 
+        {
+            log.info("[AUTH] Login de usuário do banco bem-sucedido: {}", req.getUsername());
+            return ResponseEntity.ok(new LoginResponse(authResult.get().getToken()));
+        }
 
+        log.warn("[AUTH] Falha no login para usuário: {} (Host: {}, TenantId: {})", 
+            req.getUsername(), hostHeader, tenantIdFromHost);
         return ResponseEntity.status(401).build();
     }
 
