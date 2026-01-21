@@ -77,3 +77,9 @@ app:
 
 server:
   forward-headers-strategy: framework
+
+evolution:
+api:
+  url: ${EVOLUTION_API_URL:http://localhost:8081}
+  key: ${EVOLUTION_API_KEY}
+  enabled: ${EVOLUTION_API_ENABLED:true}

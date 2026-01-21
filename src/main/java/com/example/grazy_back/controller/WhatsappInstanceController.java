@@ -52,15 +52,19 @@ public class WhatsappInstanceController {
      * POST /api/admin/whatsapp/connect
      */
     @PostMapping("/connect")
-    public ResponseEntity<WhatsappConnectResponse> connect() {
-        try {
+    public ResponseEntity<WhatsappConnectResponse> connect()
+    {
+        try 
+        {
             Long tenantId = TenantContext.getCurrentTenantId();
             log.info("[WHATSAPP] Iniciando conexão para tenant {}", tenantId);
             
             WhatsappConnectResponse response = evolutionApiService.connect(tenantId);
             return ResponseEntity.ok(response);
             
-        } catch (Exception e) {
+        }
+        catch (Exception e) 
+        {
             log.error("[WHATSAPP] Erro ao conectar: {}", e.getMessage());
             return ResponseEntity.ok(WhatsappConnectResponse.error(e.getMessage()));
         }
