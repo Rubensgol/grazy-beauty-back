@@ -86,19 +86,11 @@ public class TenantFilter extends OncePerRequestFilter
         }
         
         // 2. Se for o domínio principal (grazybeauty.com.br ou www.grazybeauty.com.br)
-        // tenta buscar um tenant padrão
+        // NÃO é um tenant - é o acesso do admin master
         if (host.equals(appDomain) || host.equals("www." + appDomain))
         {
-            log.debug("Domínio principal acessado: {}", host);
-            // Tenta buscar tenant com subdomínio "default" ou "www"
-            tenant = tenantService.buscarPorSubdominio("default")
-                .or(() -> tenantService.buscarPorSubdominio("www"));
-            
-            if (tenant.isPresent())
-            {
-                log.debug("Tenant padrão encontrado para domínio principal");
-                return tenant;
-            }
+            log.debug("Domínio principal (admin master) acessado: {} - sem tenant", host);
+            return Optional.empty();
         }
         
         // 3. Tenta extrair subdomínio
