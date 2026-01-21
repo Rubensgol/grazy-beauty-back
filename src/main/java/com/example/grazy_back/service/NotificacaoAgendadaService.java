@@ -27,18 +27,21 @@ public class NotificacaoAgendadaService
     private final AtomicLong ultimaExecucaoEpochMillis = new AtomicLong(0L);
     private final AgendamentoRepository agendamentoRepository;
     private final WhatsappSenderService whatsappSenderService;
+    private final EvolutionApiService evolutionApiService;
     private final EmailService emailService;
     private final MessageBuilderService messageBuilder;
 
     public NotificacaoAgendadaService(ConfiguracaoNotificacaoService configService,
                                       AgendamentoRepository agendamentoRepository,
                                       WhatsappSenderService whatsappSenderService,
+                                      EvolutionApiService evolutionApiService,
                                       EmailService emailService,
                                       MessageBuilderService messageBuilder)
     {
         this.configService = configService;
         this.agendamentoRepository = agendamentoRepository;
         this.whatsappSenderService = whatsappSenderService;
+        this.evolutionApiService = evolutionApiService;
         this.emailService = emailService;
         this.messageBuilder = messageBuilder;
     }
@@ -119,7 +122,7 @@ public class NotificacaoAgendadaService
 
                 if ("WHATSAPP".equalsIgnoreCase(p)) 
                 {
-                    whatsappSenderService.enviar(a.getUsuario(), a);
+                    enviarWhatsAppLembrete(a);
                 }
                 else if ("EMAIL".equalsIgnoreCase(p))
                 {
@@ -195,6 +198,61 @@ public class NotificacaoAgendadaService
         catch (Exception ex)
         {
             log.error("[RESUMO] Falha ao enviar resumo diário para {}: {}", destino, ex.getMessage());
+        }
+    }
+
+    /**
+     * Envia lembrete de agendamento via WhatsApp usando Evolution API.
+     * Prioriza a Evolution API (multi-tenant com tenantId), e usa fallback para WhatsappSenderService.
+     */
+    private void enviarWhatsAppLembrete(Agendamento agendamento)
+    {
+        var cliente = agendamento.getUsuario();
+        
+        if (cliente == null || cliente.getTelefone() == null || cliente.getTelefone().isBlank())
+        {
+            log.warn("[WHATSAPP] Cliente sem telefone - agendamento {}", agendamento.getId());
+            return;
+        }
+
+        String telefone = cliente.getTelefone();
+        String mensagem = messageBuilder.corpoLembreteAgendamentoTexto(cliente, agendamento);
+        Long tenantId = agendamento.getTenantId();
+
+        // Prioriza Evolution API se tenantId disponível e API habilitada
+        if (tenantId != null && evolutionApiService.isEnabled())
+        {
+            try
+            {
+                boolean enviado = evolutionApiService.sendTextMessage(tenantId, telefone, mensagem);
+                if (enviado)
+                {
+                    log.info("[WHATSAPP-EVOLUTION] Lembrete enviado para {} (agendamento {}, tenant {})", 
+                             telefone, agendamento.getId(), tenantId);
+                    return;
+                }
+                else
+                {
+                    log.warn("[WHATSAPP-EVOLUTION] Falha ao enviar para {} - tentando fallback", telefone);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.error("[WHATSAPP-EVOLUTION] Erro ao enviar lembrete para {} (agendamento {}): {}", 
+                          telefone, agendamento.getId(), ex.getMessage());
+            }
+        }
+
+        // Fallback para WhatsappSenderService (API oficial do WhatsApp Business ou simulado)
+        try
+        {
+            whatsappSenderService.enviar(cliente, agendamento);
+            log.info("[WHATSAPP-FALLBACK] Lembrete enviado para {} (agendamento {})", telefone, agendamento.getId());
+        }
+        catch (Exception ex)
+        {
+            log.error("[WHATSAPP-FALLBACK] Falha ao enviar lembrete para {} (agendamento {}): {}", 
+                      telefone, agendamento.getId(), ex.getMessage());
         }
     }
 }
