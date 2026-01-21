@@ -65,10 +65,9 @@ public class EvolutionApiService {
      */
     public WhatsappStatusResponse getConnectionStatus(Long tenantId) {
         if (!enabled) {
-            // Se não está usando Evolution API, pode estar usando API oficial
-            // Retornar status desconhecido/simulado
-            log.debug("[EVOLUTION] API não habilitada, retornando status simulado");
-            return WhatsappStatusResponse.connected("Modo Legado", "legacy");
+            // Se Evolution API não está habilitada, retornar desconectado
+            log.debug("[EVOLUTION] API não habilitada, retornando desconectado");
+            return WhatsappStatusResponse.disconnected();
         }
 
         String instanceName = getInstanceName(tenantId);
@@ -112,14 +111,14 @@ public class EvolutionApiService {
             log.info("[EVOLUTION] Instância {} não existe ainda", instanceName);
             return WhatsappStatusResponse.disconnected();
         } catch (org.springframework.web.client.ResourceAccessException e) {
-            // Evolution API não está acessível - pode estar usando modo legado
-            log.warn("[EVOLUTION] API não acessível em {}, verificando modo legado", apiUrl);
-            return WhatsappStatusResponse.connected("Modo Legado (API indisponível)", "legacy");
+            // Evolution API não está acessível - retornar desconectado
+            log.warn("[EVOLUTION] API não acessível em {}", apiUrl);
+            return WhatsappStatusResponse.disconnected();
         } catch (Exception e) {
             log.error("[EVOLUTION] Erro ao verificar status: {}", e.getMessage());
-            // Em caso de erro de conexão, assumir modo legado
+            // Em caso de erro de conexão, retornar desconectado
             if (e.getMessage() != null && (e.getMessage().contains("Connection refused") || e.getMessage().contains("connect"))) {
-                return WhatsappStatusResponse.connected("Modo Legado", "legacy");
+                return WhatsappStatusResponse.disconnected();
             }
             return WhatsappStatusResponse.error("Erro ao verificar status: " + e.getMessage());
         }
