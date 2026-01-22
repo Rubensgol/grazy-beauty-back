@@ -164,6 +164,38 @@ public class AuthController
         return ResponseEntity.status(401).build();
     }
 
+    /**
+     * Login exclusivo para Super Admin (Master).
+     * Usado pela interface de administração master.
+     */
+    @PostMapping("/login/master")
+    @Operation(summary = "Login Super Admin", description = "Autentica o Super Admin do sistema")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
+        @ApiResponse(responseCode = "403", description = "Credenciais inválidas")
+    })
+    public ResponseEntity<?> loginMaster(@RequestBody LoginRequest req) 
+    {
+        if (req.getUsername() == null || req.getSenha() == null) {
+            return ResponseEntity.badRequest().body(
+                new ApiResposta<>(false, null, "Usuário e senha são obrigatórios", java.time.Instant.now()));
+        }
+        
+        log.info("[AUTH] Super Admin login attempt - User: {}, Admin esperado: {}", req.getUsername(), adminUser);
+        
+        // Verificar credenciais do Super Admin
+        if (req.getUsername().equals(adminUser) && req.getSenha().equals(adminPass)) 
+        {
+            log.info("[AUTH] Super Admin login bem-sucedido: {}", adminUser);
+            String token = jwtUtil.generateToken(adminUser, "SUPER_ADMIN", null);
+            return ResponseEntity.ok(new LoginResponse(token));
+        }
+        
+        log.warn("[AUTH] Super Admin login falhou - User: {}", req.getUsername());
+        return ResponseEntity.status(403).body(
+            new ApiResposta<>(false, null, "Usuário ou senha incorretos", java.time.Instant.now()));
+    }
+
     @GetMapping("/validate")
     @Operation(summary = "Valida token JWT", description = "Recebe um token JWT no header Authorization e valida se está válido")
     @ApiResponses(value = {
