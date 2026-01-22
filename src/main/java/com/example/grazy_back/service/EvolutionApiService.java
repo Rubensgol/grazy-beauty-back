@@ -65,7 +65,6 @@ public class EvolutionApiService {
      */
     public WhatsappStatusResponse getConnectionStatus(Long tenantId) {
         if (!enabled) {
-            // Se Evolution API não está habilitada, retornar desconectado
             log.debug("[EVOLUTION] API não habilitada, retornando desconectado");
             return WhatsappStatusResponse.disconnected();
         }
@@ -73,37 +72,53 @@ public class EvolutionApiService {
         String instanceName = getInstanceName(tenantId);
         
         try {
-            String url = apiUrl + "/instance/connectionState/" + instanceName;
+            // Primeiro, tentar buscar a instância via fetchInstances
+            String fetchUrl = apiUrl + "/instance/fetchInstances?instanceName=" + instanceName;
             HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
             
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-            JsonNode json = objectMapper.readTree(response.getBody());
+            ResponseEntity<String> fetchResponse = restTemplate.exchange(fetchUrl, HttpMethod.GET, entity, String.class);
+            JsonNode instances = objectMapper.readTree(fetchResponse.getBody());
             
-            String state = json.path("state").asText("close");
+            log.debug("[EVOLUTION] fetchInstances response: {}", fetchResponse.getBody());
             
-            if ("open".equals(state)) {
-                // Buscar informações do número conectado
-                try {
-                    ResponseEntity<String> profileResponse = restTemplate.exchange(
-                        apiUrl + "/instance/fetchInstances?instanceName=" + instanceName, 
-                        HttpMethod.GET, entity, String.class
-                    );
-                    JsonNode profileJson = objectMapper.readTree(profileResponse.getBody());
-                    
-                    // Tentar extrair o número do telefone
-                    String phoneNumber = "";
-                    if (profileJson.isArray() && profileJson.size() > 0) {
-                        phoneNumber = profileJson.get(0).path("instance").path("owner").asText("");
-                        if (phoneNumber.contains("@")) {
-                            phoneNumber = phoneNumber.split("@")[0];
-                        }
-                    }
-                    
+            if (instances.isArray() && instances.size() > 0) {
+                JsonNode instance = instances.get(0);
+                
+                // Verificar o estado da conexão - pode estar em diferentes caminhos
+                String state = instance.path("instance").path("state").asText("");
+                if (state.isEmpty()) {
+                    state = instance.path("state").asText("");
+                }
+                if (state.isEmpty()) {
+                    state = instance.path("instance").path("connectionStatus").asText("");
+                }
+                
+                log.info("[EVOLUTION] Instância {} encontrada, estado: {}", instanceName, state);
+                
+                // Extrair número do telefone
+                String phoneNumber = "";
+                String owner = instance.path("instance").path("owner").asText("");
+                if (owner.isEmpty()) {
+                    owner = instance.path("owner").asText("");
+                }
+                if (!owner.isEmpty() && owner.contains("@")) {
+                    phoneNumber = owner.split("@")[0];
+                }
+                
+                // Verificar se está conectado
+                if ("open".equalsIgnoreCase(state) || "connected".equalsIgnoreCase(state)) {
+                    log.info("[EVOLUTION] Instância {} está CONECTADA, telefone: {}", instanceName, phoneNumber);
                     return WhatsappStatusResponse.connected(formatPhoneNumber(phoneNumber), instanceName);
-                } catch (Exception e) {
-                    return WhatsappStatusResponse.connected("", instanceName);
+                } else if ("connecting".equalsIgnoreCase(state)) {
+                    log.info("[EVOLUTION] Instância {} está CONECTANDO", instanceName);
+                    return new WhatsappStatusResponse("connecting");
+                } else {
+                    log.info("[EVOLUTION] Instância {} existe mas estado é: {}", instanceName, state);
+                    // Instância existe mas não está conectada - tentar connectionState
+                    return checkConnectionState(instanceName, entity);
                 }
             } else {
+                log.info("[EVOLUTION] Nenhuma instância encontrada para {}", instanceName);
                 return WhatsappStatusResponse.disconnected();
             }
             
@@ -111,16 +126,43 @@ public class EvolutionApiService {
             log.info("[EVOLUTION] Instância {} não existe ainda", instanceName);
             return WhatsappStatusResponse.disconnected();
         } catch (org.springframework.web.client.ResourceAccessException e) {
-            // Evolution API não está acessível - retornar desconectado
             log.warn("[EVOLUTION] API não acessível em {}", apiUrl);
             return WhatsappStatusResponse.disconnected();
         } catch (Exception e) {
             log.error("[EVOLUTION] Erro ao verificar status: {}", e.getMessage());
-            // Em caso de erro de conexão, retornar desconectado
             if (e.getMessage() != null && (e.getMessage().contains("Connection refused") || e.getMessage().contains("connect"))) {
                 return WhatsappStatusResponse.disconnected();
             }
             return WhatsappStatusResponse.error("Erro ao verificar status: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Verifica o estado da conexão via endpoint connectionState
+     */
+    private WhatsappStatusResponse checkConnectionState(String instanceName, HttpEntity<Void> entity) {
+        try {
+            String url = apiUrl + "/instance/connectionState/" + instanceName;
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            JsonNode json = objectMapper.readTree(response.getBody());
+            
+            log.debug("[EVOLUTION] connectionState response: {}", response.getBody());
+            
+            String state = json.path("state").asText("");
+            if (state.isEmpty()) {
+                state = json.path("instance").path("state").asText("close");
+            }
+            
+            log.info("[EVOLUTION] connectionState para {}: {}", instanceName, state);
+            
+            if ("open".equalsIgnoreCase(state) || "connected".equalsIgnoreCase(state)) {
+                return WhatsappStatusResponse.connected("", instanceName);
+            }
+            
+            return WhatsappStatusResponse.disconnected();
+        } catch (Exception e) {
+            log.warn("[EVOLUTION] Erro ao verificar connectionState: {}", e.getMessage());
+            return WhatsappStatusResponse.disconnected();
         }
     }
 
