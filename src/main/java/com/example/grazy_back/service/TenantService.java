@@ -405,6 +405,10 @@ public class TenantService
             .findFirst()
             .orElse(null);
 
+        // Buscar configurações do tenant para pegar cores e logo
+        ConfiguracaoTenant config = configuracaoTenantRepository.findByTenantId(tenant.getId())
+            .orElse(null);
+
         return TenantResponse.builder()
             .id(tenant.getId())
             .nomeNegocio(tenant.getNomeNegocio())
@@ -412,6 +416,7 @@ public class TenantService
             .dominioCustomizado(tenant.getDominioCustomizado())
             .emailAdmin(tenant.getEmailAdmin())
             .nomeAdmin(admin != null ? admin.getNome() : null)
+            .telefoneAdmin(admin != null ? admin.getTelefone() : null)
             .plano(tenant.getPlano())
             .status(tenant.getStatus())
             .ativo(tenant.isAtivo())
@@ -419,7 +424,12 @@ public class TenantService
             .agendamentosNoMes(tenant.getAgendamentosNoMes())
             .limiteAgendamentosMes(tenant.getLimiteAgendamentosMes())
             .criadoEm(tenant.getCriadoEm())
+            .atualizadoEm(tenant.getAtualizadoEm())
+            .suspensaoEm(tenant.getSuspensaoEm())
+            .motivoSuspensao(tenant.getMotivoSuspensao())
             .urlAcesso(String.format("https://%s.%s", tenant.getSubdominio(), appDomain))
+            .corPrimaria(config != null ? config.getCorPrimaria() : tenant.getCorPrimaria())
+            .logoUrl(config != null ? config.getLogoUrl() : tenant.getLogoUrl())
             .build();
     }
 

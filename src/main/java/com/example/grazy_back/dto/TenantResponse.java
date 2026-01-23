@@ -25,6 +25,7 @@ public class TenantResponse
     private String dominioCustomizado;
     private String emailAdmin;
     private String nomeAdmin;
+    private String telefoneAdmin;
     private PlanoEnum plano;
     private StatusTenantEnum status;
     private boolean ativo;
@@ -32,6 +33,13 @@ public class TenantResponse
     private Integer agendamentosNoMes;
     private Integer limiteAgendamentosMes;
     private Instant criadoEm;
+    private Instant atualizadoEm;
+    private Instant suspensaoEm;
+    private String motivoSuspensao;
     private String urlAcesso;
     private String senhaProvisoria; // Apenas na resposta de criação
+    
+    // Configurações visuais
+    private String corPrimaria;
+    private String logoUrl;
 }
