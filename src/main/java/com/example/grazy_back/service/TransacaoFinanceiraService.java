@@ -94,4 +94,54 @@ public class TransacaoFinanceiraService
 
         return ResponseEntity.ok(ApiResposta.of(new ValoresDTO(receita, despesa, lucroLiquido)));
     }
+
+    @Transactional
+    public ResponseEntity<?> atualizarTransacao(Long id, TransacaoFinanceiraRequest transacao)
+    {
+        if (id == null || transacao == null) 
+            return ResponseEntity.badRequest().body(ApiResposta.error("Dados inválidos"));
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+        
+        TransacaoFinanceira existente = transacaoRepository.findById(id).orElse(null);
+        
+        if (existente == null) 
+            return ResponseEntity.notFound().build();
+        
+        // Verifica se a transação pertence ao tenant atual (segurança)
+        if (!TenantContext.isSuperAdmin() && !existente.getTenantId().equals(tenantId)) 
+            return ResponseEntity.status(403).body(ApiResposta.error("Acesso negado"));
+
+        existente.setDescricao(transacao.getDescricao());
+        existente.setValor(transacao.getValor());
+        existente.setTipo(transacao.getTipo());
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate data = LocalDate.parse(transacao.getData(), formatter);
+        existente.setData(Date.from(data.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+
+        transacaoRepository.save(existente);
+        return ResponseEntity.ok(ApiResposta.of(existente));
+    }
+
+    @Transactional
+    public ResponseEntity<?> excluirTransacao(Long id)
+    {
+        if (id == null) 
+            return ResponseEntity.badRequest().body(ApiResposta.error("ID inválido"));
+
+        Long tenantId = TenantContext.getCurrentTenantId();
+        
+        TransacaoFinanceira existente = transacaoRepository.findById(id).orElse(null);
+        
+        if (existente == null) 
+            return ResponseEntity.notFound().build();
+        
+        // Verifica se a transação pertence ao tenant atual (segurança)
+        if (!TenantContext.isSuperAdmin() && !existente.getTenantId().equals(tenantId)) 
+            return ResponseEntity.status(403).body(ApiResposta.error("Acesso negado"));
+
+        transacaoRepository.delete(existente);
+        return ResponseEntity.ok(ApiResposta.of("Transação excluída com sucesso"));
+    }
 }
