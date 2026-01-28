@@ -83,3 +83,12 @@ evolution:
     url: ${EVOLUTION_API_URL:http://localhost:8081}
     key: ${EVOLUTION_API_KEY}
     enabled: ${EVOLUTION_API_ENABLED:true}
+
+# Mercado Pago
+mercadopago:
+  access:
+    token: ${MERCADOPAGO_ACCESS_TOKEN:}
+  public:
+    key: ${MERCADOPAGO_PUBLIC_KEY:}
+  api:
+    url: ${MERCADOPAGO_API_URL:https://api.mercadopago.com}
