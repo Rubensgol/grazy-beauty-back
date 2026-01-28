@@ -30,4 +30,15 @@ public class ImageMetadata
     
     // Indica se a imagem foi enviada para uso em um Serviço
     private Boolean forServico = false;
+    
+    // Exibir na landing page (portfolio)
+    private Boolean exibirLanding = false;
+    
+    // Ordem de exibição na landing
+    private Integer ordemLanding = 0;
+    
+    // Título/descrição para exibição
+    private String titulo;
+    private String descricao;
+    private String categoria;
 }

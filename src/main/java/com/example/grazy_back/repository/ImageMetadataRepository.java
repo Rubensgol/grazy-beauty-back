@@ -12,4 +12,8 @@ public interface ImageMetadataRepository extends JpaRepository<ImageMetadata, Lo
 	List<ImageMetadata> findAllByForServicoFalse();
 	List<ImageMetadata> findByTenantId(Long tenantId);
 	List<ImageMetadata> findByTenantIdAndForServicoFalse(Long tenantId);
+	
+	// Para landing page
+	List<ImageMetadata> findAllByForServicoFalseAndExibirLandingTrueOrderByOrdemLandingAsc();
+	List<ImageMetadata> findByTenantIdAndForServicoFalseAndExibirLandingTrueOrderByOrdemLandingAsc(Long tenantId);
 }

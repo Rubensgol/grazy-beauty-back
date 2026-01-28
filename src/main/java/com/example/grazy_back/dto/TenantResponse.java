@@ -42,4 +42,9 @@ public class TenantResponse
     // Configurações visuais
     private String corPrimaria;
     private String logoUrl;
+    
+    // Configurações de cobrança
+    private Integer diaPagamento;
+    private Boolean enviarCobrancaWhatsapp;
+    private Boolean enviarCobrancaEmail;
 }

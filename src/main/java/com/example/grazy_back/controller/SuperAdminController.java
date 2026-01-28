@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.grazy_back.dto.ApiResposta;
 import com.example.grazy_back.dto.CriarTenantRequest;
+import com.example.grazy_back.dto.DiaPagamentoRequest;
 import com.example.grazy_back.dto.TenantResponse;
 import com.example.grazy_back.service.TenantService;
 
@@ -117,6 +118,19 @@ public class SuperAdminController
     {
         tenantService.resetarContadoresMensais();
         return ResponseEntity.ok(ApiResposta.of(null, "Contadores resetados com sucesso"));
+    }
+    
+    /**
+     * Configura o dia de pagamento e notificações para um tenant
+     */
+    @PutMapping({"/api/admin/master/tenants/{id}/dia-pagamento", "/api/admin/tenants/{id}/dia-pagamento"})
+    @Operation(summary = "Configura dia de pagamento", description = "Define o dia do mês para cobrança e quais notificações enviar")
+    public ResponseEntity<ApiResposta<Void>> configurarDiaPagamento(
+            @PathVariable Long id, 
+            @Valid @RequestBody DiaPagamentoRequest request) 
+    {
+        tenantService.configurarDiaPagamento(id, request);
+        return ResponseEntity.ok(ApiResposta.of(null, "Configuração de pagamento atualizada com sucesso"));
     }
 
     // Record para request de suspensão

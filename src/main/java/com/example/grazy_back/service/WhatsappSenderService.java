@@ -79,6 +79,49 @@ public class WhatsappSenderService
             log.error("[WHATSAPP] Falha ao enviar para {} agendamento {}: {}", telefoneDestino, agendamento.getId(), ex.getMessage());
         }
     }
+    
+    /**
+     * Envia mensagem de cobrança via WhatsApp
+     */
+    public void enviarMensagemCobranca(String telefone, String mensagem)
+    {
+        if (telefone == null || telefone.isBlank()) 
+        {
+            log.warn("[WHATSAPP] Telefone inválido para cobrança");
+            return;
+        }
+
+        String telefoneDestino = normalizarTelefone(telefone);
+
+        if (!enabled)
+        {
+            log.info("[WHATSAPP][SIMULADO] Cobrança para {} msg='{}'", telefoneDestino, mensagem);
+            return;
+        }
+
+        try 
+        {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(token);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("messaging_product", "whatsapp");
+            body.put("to", telefoneDestino);
+            body.put("type", "text");
+            Map<String, String> text = new HashMap<>();
+            text.put("body", mensagem);
+            body.put("text", text);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            restTemplate.postForEntity(apiUrl, entity, String.class);
+            log.info("[WHATSAPP] Cobrança enviada para {}", telefoneDestino);
+        }
+        catch (Exception ex)
+        {
+            log.error("[WHATSAPP] Falha ao enviar cobrança para {}: {}", telefoneDestino, ex.getMessage());
+        }
+    }
 
 
     private String normalizarTelefone(String telefone)

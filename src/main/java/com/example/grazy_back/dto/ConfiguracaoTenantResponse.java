@@ -53,4 +53,6 @@ public class ConfiguracaoTenantResponse
     // Status do tenant
     private boolean onboardingCompleto;
     private String plano;
+    private String status; // ATIVO, SUSPENSO, TRIAL, etc
+    private String motivoSuspensao; // Mensagem para exibir quando suspenso
 }

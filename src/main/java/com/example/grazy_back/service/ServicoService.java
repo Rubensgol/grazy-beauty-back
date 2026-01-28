@@ -53,8 +53,10 @@ public class ServicoService
         novoServico.setNome(servico.getNome());
         novoServico.setDescricao(servico.getDescricao());
         novoServico.setPreco(servico.getPreco());
+        novoServico.setCusto(servico.getCusto());
         novoServico.setDuracaoMinutos(servico.getDuracaoMinutos());
         novoServico.setAtivo(true);
+        novoServico.setExibirLanding(servico.getExibirLanding() != null ? servico.getExibirLanding() : true);
         // se não vier ordem, coloca no final
         if (servico.getOrdem() != null)
             novoServico.setOrdem(servico.getOrdem());
@@ -73,9 +75,12 @@ public class ServicoService
             if (servico.getNome() != null) existing.setNome(servico.getNome());
             if (servico.getDescricao() != null) existing.setDescricao(servico.getDescricao());
             if (servico.getPreco() != null) existing.setPreco(servico.getPreco());
+            if (servico.getCusto() != null) existing.setCusto(servico.getCusto());
             if (servico.getImageStoredFilename() != null) existing.setImageStoredFilename(servico.getImageStoredFilename());
             if (servico.getDuracaoMinutos() != null) existing.setDuracaoMinutos(servico.getDuracaoMinutos());
             if (servico.getOrdem() != null) existing.setOrdem(servico.getOrdem());
+            if (servico.getAtivo() != null) existing.setAtivo(servico.getAtivo());
+            if (servico.getExibirLanding() != null) existing.setExibirLanding(servico.getExibirLanding());
             return servicoRepository.save(existing);
         }).orElse(null);
     }

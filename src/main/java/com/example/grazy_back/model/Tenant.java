@@ -81,4 +81,16 @@ public class Tenant
     private String logoUrl;
 
     private String databaseSchema;
+    
+    // Configurações de cobrança
+    private Integer diaPagamento; // Dia do mês para cobrar (1-31)
+    
+    @Builder.Default
+    private Boolean enviarCobrancaWhatsapp = false;
+    
+    @Builder.Default
+    private Boolean enviarCobrancaEmail = false;
+    
+    private String nomeAdmin; // Nome completo do administrador
+    private String telefoneAdmin; // Telefone para contato e cobrança
 }

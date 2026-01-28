@@ -26,5 +26,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long>
     
     List<Tenant> findByStatus(StatusTenantEnum status);
     
+    List<Tenant> findByStatusAndAtivoTrue(StatusTenantEnum status);
+    
     List<Tenant> findByAtivoTrueOrderByCriadoEmDesc();
 }

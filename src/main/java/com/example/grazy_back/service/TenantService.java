@@ -177,7 +177,7 @@ public class TenantService
     /**
      * Busca tenant por ID.
      */
-    public Optional<TenantResponse> buscarPorId(Long id) 
+    public Optional<TenantResponse> buscarPorId(long id) 
     {
         return tenantRepository.findById(id).map(this::toTenantResponse);
     }
@@ -186,7 +186,7 @@ public class TenantService
      * Atualiza configurações do tenant.
      */
     @Transactional
-    public ConfiguracaoTenantResponse atualizarConfiguracao(Long tenantId, ConfiguracaoTenantRequest request) 
+    public ConfiguracaoTenantResponse atualizarConfiguracao(long tenantId, ConfiguracaoTenantRequest request) 
     {
         Tenant tenant = tenantRepository.findById(tenantId)
             .orElseThrow(() -> new IllegalArgumentException("Tenant não encontrado: " + tenantId));
@@ -241,7 +241,7 @@ public class TenantService
     /**
      * Busca configurações por ID do tenant.
      */
-    public Optional<ConfiguracaoTenantResponse> buscarConfiguracaoPorId(Long tenantId) 
+    public Optional<ConfiguracaoTenantResponse> buscarConfiguracaoPorId(long tenantId) 
     {
         return tenantRepository.findById(tenantId)
             .map(tenant -> {
@@ -255,7 +255,7 @@ public class TenantService
      * Marca o onboarding como completo.
      */
     @Transactional
-    public void completarOnboarding(Long tenantId) 
+    public void completarOnboarding(long tenantId) 
     {
         tenantRepository.findById(tenantId).ifPresent(tenant -> {
             tenant.setOnboardingCompleto(true);
@@ -269,7 +269,7 @@ public class TenantService
      * Suspende um tenant (por falta de pagamento).
      */
     @Transactional
-    public void suspenderTenant(Long tenantId, String motivo) 
+    public void suspenderTenant(long tenantId, String motivo) 
     {
         tenantRepository.findById(tenantId).ifPresent(tenant -> {
             tenant.setStatus(StatusTenantEnum.SUSPENSO);
@@ -285,7 +285,7 @@ public class TenantService
      * Reativa um tenant.
      */
     @Transactional
-    public void reativarTenant(Long tenantId) 
+    public void reativarTenant(long tenantId) 
     {
         tenantRepository.findById(tenantId).ifPresent(tenant -> {
             tenant.setStatus(StatusTenantEnum.ATIVO);
@@ -301,7 +301,7 @@ public class TenantService
      * Incrementa contador de agendamentos do mês.
      */
     @Transactional
-    public boolean incrementarAgendamento(Long tenantId) 
+    public boolean incrementarAgendamento(long tenantId) 
     {
         return tenantRepository.findById(tenantId).map(tenant -> {
             if (tenant.getLimiteAgendamentosMes() == -1) 
@@ -336,6 +336,36 @@ public class TenantService
             tenantRepository.save(tenant);
         });
         log.info("Contadores de agendamento resetados");
+    }
+    
+    /**
+     * Configura o dia de pagamento e notificações para um tenant
+     */
+    @Transactional
+    public void configurarDiaPagamento(Long tenantId, com.example.grazy_back.dto.DiaPagamentoRequest request) 
+    {
+        Tenant tenant = tenantRepository.findById(tenantId)
+            .orElseThrow(() -> new IllegalArgumentException("Tenant não encontrado: " + tenantId));
+        
+        // Valida dia de pagamento
+        if (request.getDiaPagamento() != null) {
+            if (request.getDiaPagamento() < 1 || request.getDiaPagamento() > 31) {
+                throw new IllegalArgumentException("Dia de pagamento deve estar entre 1 e 31");
+            }
+            tenant.setDiaPagamento(request.getDiaPagamento());
+        }
+        
+        // Atualiza flags de notificação
+        if (request.getEnviarWhatsapp() != null) {
+            tenant.setEnviarCobrancaWhatsapp(request.getEnviarWhatsapp());
+        }
+        
+        if (request.getEnviarEmail() != null) {
+            tenant.setEnviarCobrancaEmail(request.getEnviarEmail());
+        }
+        
+        tenantRepository.save(tenant);
+        log.info("Dia de pagamento configurado para tenant {}: dia {}", tenantId, request.getDiaPagamento());
     }
 
     // === Métodos privados ===
@@ -415,8 +445,8 @@ public class TenantService
             .subdominio(tenant.getSubdominio())
             .dominioCustomizado(tenant.getDominioCustomizado())
             .emailAdmin(tenant.getEmailAdmin())
-            .nomeAdmin(admin != null ? admin.getNome() : null)
-            .telefoneAdmin(admin != null ? admin.getTelefone() : null)
+            .nomeAdmin(admin != null ? admin.getNome() : tenant.getNomeAdmin())
+            .telefoneAdmin(admin != null ? admin.getTelefone() : tenant.getTelefoneAdmin())
             .plano(tenant.getPlano())
             .status(tenant.getStatus())
             .ativo(tenant.isAtivo())
@@ -430,6 +460,9 @@ public class TenantService
             .urlAcesso(String.format("https://%s.%s", tenant.getSubdominio(), appDomain))
             .corPrimaria(config != null ? config.getCorPrimaria() : tenant.getCorPrimaria())
             .logoUrl(config != null ? config.getLogoUrl() : tenant.getLogoUrl())
+            .diaPagamento(tenant.getDiaPagamento())
+            .enviarCobrancaWhatsapp(tenant.getEnviarCobrancaWhatsapp())
+            .enviarCobrancaEmail(tenant.getEnviarCobrancaEmail())
             .build();
     }
 
@@ -460,6 +493,8 @@ public class TenantService
             .antecedenciaMaximaDias(config.getAntecedenciaMaximaDias())
             .onboardingCompleto(tenant.isOnboardingCompleto())
             .plano(tenant.getPlano().getNome())
+            .status(tenant.getStatus().name())
+            .motivoSuspensao(tenant.getMotivoSuspensao())
             .build();
     }
 }

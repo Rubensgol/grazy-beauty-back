@@ -3,6 +3,7 @@ package com.example.grazy_back.controller;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -72,7 +74,32 @@ public class ImageController
     @Operation(summary = "Lista imagens")
     public ResponseEntity<?> listImages() 
     {
-        return ResponseEntity.ok(storage.listAllStoredFilenames());
+        return ResponseEntity.ok(storage.listAllImages());
+    }
+
+    @GetMapping("/landing")
+    @Operation(summary = "Lista imagens para landing page (ordenadas)")
+    public ResponseEntity<?> listLandingImages() 
+    {
+        return ResponseEntity.ok(storage.listLandingImages());
+    }
+
+    @PutMapping("/{storedFilename}")
+    @Operation(summary = "Atualiza metadados da imagem")
+    public ResponseEntity<?> updateMetadata(@PathVariable String storedFilename, @RequestBody Map<String, Object> body) 
+    {
+        ImageMetadata updated = storage.updateMetadata(storedFilename, body);
+        if (updated == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(updated);
+    }
+
+    @PutMapping("/ordenar")
+    @Operation(summary = "Atualiza ordem das imagens na landing")
+    public ResponseEntity<?> updateOrder(@RequestBody List<String> storedFilenames) 
+    {
+        storage.updateLandingOrder(storedFilenames);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Ordem atualizada com sucesso"));
     }
 
     @GetMapping("/download/{storedFilename}")

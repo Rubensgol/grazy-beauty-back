@@ -21,8 +21,10 @@ public class Servico
     private String nome;
     private String descricao;
     private Double preco;
+    private Double custo; // Custo do serviço para cálculo de lucro
     private String imageStoredFilename;
     private Integer duracaoMinutos;
     private Integer ordem;
     private Boolean ativo = true;
+    private Boolean exibirLanding = true; // Se o serviço aparece na landing page
 }

@@ -177,6 +177,76 @@ public class ImageStorageService
             .collect(Collectors.toList());
     }
 
+    public List<ImageMetadata> listAllImages() 
+    {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return repo.findAllByForServicoFalse();
+        }
+        
+        return repo.findByTenantIdAndForServicoFalse(tenantId);
+    }
+
+    public List<ImageMetadata> listLandingImages() 
+    {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        
+        if (tenantId == null && TenantContext.isSuperAdmin()) 
+        {
+            return repo.findAllByForServicoFalseAndExibirLandingTrueOrderByOrdemLandingAsc();
+        }
+        
+        return repo.findByTenantIdAndForServicoFalseAndExibirLandingTrueOrderByOrdemLandingAsc(tenantId);
+    }
+
+    public ImageMetadata updateMetadata(String storedFilename, java.util.Map<String, Object> body) 
+    {
+        Optional<ImageMetadata> opt = repo.findByStoredFilename(storedFilename);
+        if (opt.isEmpty()) return null;
+        
+        ImageMetadata meta = opt.get();
+        
+        if (body.containsKey("exibirLanding")) {
+            Object v = body.get("exibirLanding");
+            if (v instanceof Boolean) meta.setExibirLanding((Boolean) v);
+            else if (v instanceof String) meta.setExibirLanding(Boolean.parseBoolean((String) v));
+        }
+        
+        if (body.containsKey("ordemLanding")) {
+            Object v = body.get("ordemLanding");
+            if (v instanceof Number) meta.setOrdemLanding(((Number) v).intValue());
+            else if (v instanceof String) meta.setOrdemLanding(Integer.parseInt((String) v));
+        }
+        
+        if (body.containsKey("titulo")) {
+            meta.setTitulo((String) body.get("titulo"));
+        }
+        
+        if (body.containsKey("descricao")) {
+            meta.setDescricao((String) body.get("descricao"));
+        }
+        
+        if (body.containsKey("categoria")) {
+            meta.setCategoria((String) body.get("categoria"));
+        }
+        
+        return repo.save(meta);
+    }
+
+    public void updateLandingOrder(List<String> storedFilenames) 
+    {
+        for (int i = 0; i < storedFilenames.size(); i++) {
+            Optional<ImageMetadata> opt = repo.findByStoredFilename(storedFilenames.get(i));
+            if (opt.isPresent()) {
+                ImageMetadata meta = opt.get();
+                meta.setOrdemLanding(i);
+                repo.save(meta);
+            }
+        }
+    }
+
     public boolean deleteByStoredFilename(String storedFilename) throws IOException 
     {
         Optional<ImageMetadata> opt = repo.findByStoredFilename(storedFilename);
